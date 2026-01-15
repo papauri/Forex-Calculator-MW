@@ -59,26 +59,31 @@ if (isset($_SESSION['admin']) && isset($_POST['update_rates'])) {
     $eur_to_usd = floatval($_POST['eur_to_usd']); // e.g., 1.148
     $gbp_to_usd = floatval($_POST['gbp_to_usd']); // e.g., 1.322
     
-    // Auto-calculate other selling rates based on USD rate
-    $data['admin_selling_rates']['USD'] = $usd_selling_rate;
-    $data['admin_selling_rates']['EUR'] = $usd_selling_rate * $eur_to_usd; // e.g., 4000 * 1.148 = 4592
-    $data['admin_selling_rates']['GBP'] = $usd_selling_rate * $gbp_to_usd; // e.g., 4000 * 1.322 = 5288
-    
-    // Customer rates (what customers get - should be lower than selling rates)
-    $data['customer_rates']['USD'] = floatval($_POST['customer_usd']);
-    $data['customer_rates']['EUR'] = floatval($_POST['customer_eur']);
-    $data['customer_rates']['GBP'] = floatval($_POST['customer_gbp']);
-    
-    // Store market conversion rates for calculations
-    $data['market_rates']['EUR_to_USD'] = $eur_to_usd;
-    $data['market_rates']['GBP_to_USD'] = $gbp_to_usd;
-    $data['market_rates']['USD_to_EUR'] = 1 / $eur_to_usd;
-    $data['market_rates']['USD_to_GBP'] = 1 / $gbp_to_usd;
-    $data['market_rates']['EUR_to_GBP'] = $eur_to_usd / $gbp_to_usd;
-    $data['market_rates']['GBP_to_EUR'] = $gbp_to_usd / $eur_to_usd;
-    
-    file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT));
-    $success = 'All rates updated successfully! EUR and GBP selling rates auto-calculated based on USD rate.';
+    // Validate that conversion rates are not zero to prevent division by zero
+    if ($eur_to_usd <= 0 || $gbp_to_usd <= 0 || $usd_selling_rate <= 0) {
+        $error = 'All rates must be greater than zero!';
+    } else {
+        // Auto-calculate other selling rates based on USD rate
+        $data['admin_selling_rates']['USD'] = $usd_selling_rate;
+        $data['admin_selling_rates']['EUR'] = $usd_selling_rate * $eur_to_usd; // e.g., 4000 * 1.148 = 4592
+        $data['admin_selling_rates']['GBP'] = $usd_selling_rate * $gbp_to_usd; // e.g., 4000 * 1.322 = 5288
+        
+        // Customer rates (what customers get - should be lower than selling rates)
+        $data['customer_rates']['USD'] = floatval($_POST['customer_usd']);
+        $data['customer_rates']['EUR'] = floatval($_POST['customer_eur']);
+        $data['customer_rates']['GBP'] = floatval($_POST['customer_gbp']);
+        
+        // Store market conversion rates for calculations
+        $data['market_rates']['EUR_to_USD'] = $eur_to_usd;
+        $data['market_rates']['GBP_to_USD'] = $gbp_to_usd;
+        $data['market_rates']['USD_to_EUR'] = 1 / $eur_to_usd;
+        $data['market_rates']['USD_to_GBP'] = 1 / $gbp_to_usd;
+        $data['market_rates']['EUR_to_GBP'] = $eur_to_usd / $gbp_to_usd;
+        $data['market_rates']['GBP_to_EUR'] = $gbp_to_usd / $eur_to_usd;
+        
+        file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT));
+        $success = 'All rates updated successfully! EUR and GBP selling rates auto-calculated based on USD rate.';
+    }
 }
 
 // Clear transactions
@@ -92,7 +97,7 @@ if (isset($_SESSION['admin']) && isset($_POST['clear_transactions'])) {
 // Delete individual transaction
 if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
     $transaction_index = intval($_POST['transaction_index']);
-    if (isset($data['transactions'][$transaction_index]) && $transaction_index >= 0 && $transaction_index < count($data['transactions'])) {
+    if (isset($data['transactions'][$transaction_index])) {
         // Subtract the profit from total
         $data['total_profit'] -= $data['transactions'][$transaction_index]['best_profit'];
         // Remove the transaction
@@ -142,6 +147,10 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
 
         <?php if (isset($success)): ?>
             <div class="success"><?= htmlspecialchars($success) ?></div>
+        <?php endif; ?>
+        
+        <?php if (isset($error)): ?>
+            <div class="error"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
 
         <!-- Profit Summary -->
