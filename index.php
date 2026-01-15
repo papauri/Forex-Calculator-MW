@@ -56,8 +56,8 @@ if (!isset($data['talkremit_rates'])) {
 $result = null;
 $profit_breakdown = null;
 
-if (isset($_POST['amount']) && $_POST['amount'] !== '') {
-    $amount = floatval($_POST['amount']);
+if (isset($_POST['calculate']) || isset($_POST['save'])) {
+    $amount = floatval($_POST['amount'] ?? 0);
     $currency = $_POST['currency'];
     $direction = $_POST['direction'] ?? 'foreign_to_mwk'; // Default: foreign currency to MWK
     $transaction_name = trim($_POST['transaction_name'] ?? '');
@@ -105,22 +105,24 @@ if (isset($_POST['amount']) && $_POST['amount'] !== '') {
             $best_option = max($profit_options);
             $best_profit = $best_option['profit'];
             
-            // Log transaction
-            $transaction = [
-                'date' => date('Y-m-d H:i:s'),
-                'name' => $transaction_name,
-                'amount' => $amount,
-                'currency' => $currency,
-                'customer_rate' => $customer_rate,
-                'mwk_given_to_customer' => $mwk_given,
-                'best_strategy' => array_search($best_option, $profit_options),
-                'best_profit' => $best_profit,
-                'all_options' => $profit_options
-            ];
-            
-            $data['transactions'][] = $transaction;
-            $data['total_profit'] += $best_profit;
-            file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT));
+            // Only save transaction if 'save' button was clicked
+            if (isset($_POST['save'])) {
+                $transaction = [
+                    'date' => date('Y-m-d H:i:s'),
+                    'name' => $transaction_name,
+                    'amount' => $amount,
+                    'currency' => $currency,
+                    'customer_rate' => $customer_rate,
+                    'mwk_given_to_customer' => $mwk_given,
+                    'best_strategy' => array_search($best_option, $profit_options),
+                    'best_profit' => $best_profit,
+                    'all_options' => $profit_options
+                ];
+                
+                $data['transactions'][] = $transaction;
+                $data['total_profit'] += $best_profit;
+                file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT));
+            }
             
             $result = [
                 'amount' => $amount,
@@ -212,7 +214,10 @@ if (isset($_POST['amount']) && $_POST['amount'] !== '') {
                     </select>
                 </div>
 
-                <button type="submit" class="convert-btn">CALCULATE</button>
+                <div class="button-group">
+                    <button type="submit" name="calculate" class="calculate-btn">CALCULATE</button>
+                    <button type="submit" name="save" class="save-btn">SAVE / RECORD</button>
+                </div>
             </form>
 
             <?php if ($result): ?>
