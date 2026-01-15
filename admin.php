@@ -200,11 +200,104 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
             <div class="error"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
 
+        <!-- Transaction History (moved to top) -->
+        <div class="admin-section">
+            <div class="section-header">
+                <h3>📋 Transaction History</h3>
+                <?php if (!empty($data['transactions'])): ?>
+                <form method="POST" style="display: inline;">
+                    <button type="submit" name="clear_transactions" 
+                            class="danger-btn" 
+                            onclick="return confirm('Clear all transactions?')">
+                        Clear All
+                    </button>
+                </form>
+                <?php endif; ?>
+            </div>
+            
+            <?php if (empty($data['transactions'])): ?>
+                <div class="no-transactions">No transactions yet.</div>
+            <?php else: ?>
+                <div class="transactions-list">
+                    <?php 
+                    $transactions = $data['transactions'];
+                    $reversed = array_reverse($transactions);
+                    $displayed = array_slice($reversed, 0, 10); // Show last 10 transactions
+                    foreach ($displayed as $idx => $transaction): 
+                        // Calculate original index for deletion
+                        $original_index = count($transactions) - 1 - $idx;
+                    ?>
+                    <div class="transaction-item">
+                        <div class="transaction-header">
+                            <div class="transaction-amount">
+                                <?php if (!empty($transaction['name'])): ?>
+                                    <div style="font-weight: 600; color: #2c3e50; margin-bottom: 4px;">
+                                        <?= htmlspecialchars($transaction['name']) ?>
+                                    </div>
+                                <?php endif; ?>
+                                <?= $transaction['currency'] ?> <?= number_format($transaction['amount'], 2) ?> 
+                                → MWK <?= number_format($transaction['mwk_given_to_customer'], 2) ?>
+                            </div>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <div class="transaction-profit positive">
+                                    Profit: +<?= number_format($transaction['best_profit'], 2) ?> MWK
+                                </div>
+                                <form method="POST" style="margin: 0;">
+                                    <input type="hidden" name="transaction_index" value="<?= $original_index ?>">
+                                    <button type="submit" name="delete_transaction" 
+                                            class="delete-transaction-btn" 
+                                            onclick="return confirm('Delete this transaction?')"
+                                            title="Delete transaction">✕</button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="transaction-details">
+                            <div class="transaction-date"><?= $transaction['date'] ?></div>
+                            <div class="transaction-strategy">Best: <?= ucfirst(str_replace('_', ' ', $transaction['best_strategy'])) ?></div>
+                        </div>
+                        
+                        <!-- Show all profit options -->
+                        <div class="profit-breakdown">
+                            <?php foreach ($transaction['all_options'] as $option_key => $option): ?>
+                            <div class="profit-option <?= $option_key === $transaction['best_strategy'] ? 'best-option' : '' ?>">
+                                <span class="option-desc"><?= $option['description'] ?></span>
+                                <span class="option-profit">+<?= number_format($option['profit'], 2) ?> MWK</span>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+
         <!-- Profit Summary -->
-        <div class="profit-summary">
-            <h2>Total Profit</h2>
-            <div class="profit-amount">MWK <?= number_format($data['total_profit'], 2) ?></div>
-            <div class="transaction-count"><?= count($data['transactions']) ?> transactions</div>
+        <div class="profit-summary-container">
+            <div class="profit-summary total-profit">
+                <h2>Total Profit (All Time)</h2>
+                <div class="profit-amount">MWK <?= number_format($data['total_profit'], 2) ?></div>
+                <div class="transaction-count"><?= count($data['transactions']) ?> transactions</div>
+            </div>
+            
+            <?php
+            // Calculate today's profit
+            $today = date('Y-m-d');
+            $today_profit = 0;
+            $today_count = 0;
+            foreach ($data['transactions'] as $transaction) {
+                $transaction_date = date('Y-m-d', strtotime($transaction['date']));
+                if ($transaction_date === $today) {
+                    $today_profit += $transaction['best_profit'];
+                    $today_count++;
+                }
+            }
+            ?>
+            
+            <div class="profit-summary today-profit">
+                <h2>Today's Profit</h2>
+                <div class="profit-amount">MWK <?= number_format($today_profit, 2) ?></div>
+                <div class="transaction-count"><?= $today_count ?> transactions today</div>
+            </div>
         </div>
 
         <!-- Rate Management -->
@@ -372,77 +465,6 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
                 </div>
                 <?php endforeach; ?>
             </div>
-        </div>
-
-        <!-- Transaction History -->
-        <div class="admin-section">
-            <div class="section-header">
-                <h3>📋 Recent Transactions</h3>
-                <?php if (!empty($data['transactions'])): ?>
-                <form method="POST" style="display: inline;">
-                    <button type="submit" name="clear_transactions" 
-                            class="danger-btn" 
-                            onclick="return confirm('Clear all transactions?')">
-                        Clear All
-                    </button>
-                </form>
-                <?php endif; ?>
-            </div>
-            
-            <?php if (empty($data['transactions'])): ?>
-                <div class="no-transactions">No transactions yet.</div>
-            <?php else: ?>
-                <div class="transactions-list">
-                    <?php 
-                    $transactions = $data['transactions'];
-                    $reversed = array_reverse($transactions);
-                    $displayed = array_slice($reversed, 0, 10); // Show last 10 transactions
-                    foreach ($displayed as $idx => $transaction): 
-                        // Calculate original index for deletion
-                        $original_index = count($transactions) - 1 - $idx;
-                    ?>
-                    <div class="transaction-item">
-                        <div class="transaction-header">
-                            <div class="transaction-amount">
-                                <?php if (!empty($transaction['name'])): ?>
-                                    <div style="font-weight: 600; color: #2c3e50; margin-bottom: 4px;">
-                                        <?= htmlspecialchars($transaction['name']) ?>
-                                    </div>
-                                <?php endif; ?>
-                                <?= $transaction['currency'] ?> <?= number_format($transaction['amount'], 2) ?> 
-                                → MWK <?= number_format($transaction['mwk_given_to_customer'], 2) ?>
-                            </div>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <div class="transaction-profit positive">
-                                    +<?= number_format($transaction['best_profit'], 2) ?> MWK
-                                </div>
-                                <form method="POST" style="margin: 0;">
-                                    <input type="hidden" name="transaction_index" value="<?= $original_index ?>">
-                                    <button type="submit" name="delete_transaction" 
-                                            class="delete-transaction-btn" 
-                                            onclick="return confirm('Delete this transaction?')"
-                                            title="Delete transaction">✕</button>
-                                </form>
-                            </div>
-                        </div>
-                        <div class="transaction-details">
-                            <div class="transaction-date"><?= $transaction['date'] ?></div>
-                            <div class="transaction-strategy">Best: <?= ucfirst(str_replace('_', ' ', $transaction['best_strategy'])) ?></div>
-                        </div>
-                        
-                        <!-- Show all profit options -->
-                        <div class="profit-breakdown">
-                            <?php foreach ($transaction['all_options'] as $option_key => $option): ?>
-                            <div class="profit-option <?= $option_key === $transaction['best_strategy'] ? 'best-option' : '' ?>">
-                                <span class="option-desc"><?= $option['description'] ?></span>
-                                <span class="option-profit">+<?= number_format($option['profit'], 2) ?> MWK</span>
-                            </div>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
         </div>
 
         <footer>
