@@ -148,7 +148,7 @@ if (isset($_POST['amount']) && $_POST['amount'] !== '') {
                         <option value="foreign_to_mwk" <?= (($_POST['direction'] ?? 'foreign_to_mwk') === 'foreign_to_mwk') ? 'selected' : '' ?>>
                             Foreign Currency → MWK
                         </option>
-                        <option value="mwk_to_foreign" <?= (($_POST['direction'] ?? '') === 'mwk_to_foreign') ? 'selected' : '' ?>>
+                        <option value="mwk_to_foreign" <?= (($_POST['direction'] ?? 'foreign_to_mwk') === 'mwk_to_foreign') ? 'selected' : '' ?>>
                             MWK → Foreign Currency
                         </option>
                     </select>

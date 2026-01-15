@@ -92,7 +92,7 @@ if (isset($_SESSION['admin']) && isset($_POST['clear_transactions'])) {
 // Delete individual transaction
 if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
     $transaction_index = intval($_POST['transaction_index']);
-    if (isset($data['transactions'][$transaction_index])) {
+    if (isset($data['transactions'][$transaction_index]) && $transaction_index >= 0 && $transaction_index < count($data['transactions'])) {
         // Subtract the profit from total
         $data['total_profit'] -= $data['transactions'][$transaction_index]['best_profit'];
         // Remove the transaction
