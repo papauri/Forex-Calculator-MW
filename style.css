@@ -140,6 +140,27 @@ input.readonly {
     background: #c0392b;
 }
 
+.delete-transaction-btn {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 1;
+    transition: background-color 0.2s;
+}
+
+.delete-transaction-btn:hover {
+    background: #c0392b;
+}
+
 /* Result Display */
 .result-card {
     background: #ecf0f1;
@@ -399,7 +420,7 @@ footer {
 /* Responsive Design */
 @media (min-width: 768px) {
     .container {
-        max-width: 600px;
+        max-width: 800px;
         margin: 0 auto;
         padding: 40px 20px;
     }
@@ -410,7 +431,7 @@ footer {
     
     .rates-list {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        grid-template-columns: repeat(3, 1fr);
         gap: 10px;
     }
 
@@ -418,11 +439,15 @@ footer {
         justify-content: flex-start;
         gap: 20px;
     }
+    
+    .rate-grid {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
 }
 
 @media (min-width: 1024px) {
     .container {
-        max-width: 800px;
+        max-width: 900px;
     }
 }
 

@@ -52,26 +52,33 @@ $data = json_decode(file_get_contents($dataFile), true);
 
 // Handle rate updates
 if (isset($_SESSION['admin']) && isset($_POST['update_rates'])) {
-    // Customer rates
-    $data['customer_rates']['GBP'] = floatval($_POST['customer_gbp']);
+    // Get base USD selling rate (what admin can sell USD for)
+    $usd_selling_rate = floatval($_POST['admin_usd']);
+    
+    // Market conversion rates (how currencies convert to each other)
+    $eur_to_usd = floatval($_POST['eur_to_usd']); // e.g., 1.148
+    $gbp_to_usd = floatval($_POST['gbp_to_usd']); // e.g., 1.322
+    
+    // Auto-calculate other selling rates based on USD rate
+    $data['admin_selling_rates']['USD'] = $usd_selling_rate;
+    $data['admin_selling_rates']['EUR'] = $usd_selling_rate * $eur_to_usd; // e.g., 4000 * 1.148 = 4592
+    $data['admin_selling_rates']['GBP'] = $usd_selling_rate * $gbp_to_usd; // e.g., 4000 * 1.322 = 5288
+    
+    // Customer rates (what customers get - should be lower than selling rates)
     $data['customer_rates']['USD'] = floatval($_POST['customer_usd']);
     $data['customer_rates']['EUR'] = floatval($_POST['customer_eur']);
+    $data['customer_rates']['GBP'] = floatval($_POST['customer_gbp']);
     
-    // Market conversion rates
-    $data['market_rates']['EUR_to_GBP'] = floatval($_POST['eur_to_gbp']);
-    $data['market_rates']['EUR_to_USD'] = floatval($_POST['eur_to_usd']);
-    $data['market_rates']['GBP_to_USD'] = floatval($_POST['gbp_to_usd']);
-    $data['market_rates']['GBP_to_EUR'] = floatval($_POST['gbp_to_eur']);
-    $data['market_rates']['USD_to_EUR'] = floatval($_POST['usd_to_eur']);
-    $data['market_rates']['USD_to_GBP'] = floatval($_POST['usd_to_gbp']);
-    
-    // Admin selling rates
-    $data['admin_selling_rates']['GBP'] = floatval($_POST['admin_gbp']);
-    $data['admin_selling_rates']['USD'] = floatval($_POST['admin_usd']);
-    $data['admin_selling_rates']['EUR'] = floatval($_POST['admin_eur']);
+    // Store market conversion rates for calculations
+    $data['market_rates']['EUR_to_USD'] = $eur_to_usd;
+    $data['market_rates']['GBP_to_USD'] = $gbp_to_usd;
+    $data['market_rates']['USD_to_EUR'] = 1 / $eur_to_usd;
+    $data['market_rates']['USD_to_GBP'] = 1 / $gbp_to_usd;
+    $data['market_rates']['EUR_to_GBP'] = $eur_to_usd / $gbp_to_usd;
+    $data['market_rates']['GBP_to_EUR'] = $gbp_to_usd / $eur_to_usd;
     
     file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT));
-    $success = 'All rates updated successfully!';
+    $success = 'All rates updated successfully! EUR and GBP selling rates auto-calculated based on USD rate.';
 }
 
 // Clear transactions
@@ -80,6 +87,19 @@ if (isset($_SESSION['admin']) && isset($_POST['clear_transactions'])) {
     $data['total_profit'] = 0;
     file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT));
     $success = 'Transaction history cleared!';
+}
+
+// Delete individual transaction
+if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
+    $transaction_index = intval($_POST['transaction_index']);
+    if (isset($data['transactions'][$transaction_index])) {
+        // Subtract the profit from total
+        $data['total_profit'] -= $data['transactions'][$transaction_index]['best_profit'];
+        // Remove the transaction
+        array_splice($data['transactions'], $transaction_index, 1);
+        file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT));
+        $success = 'Transaction deleted successfully!';
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -161,12 +181,8 @@ if (isset($_SESSION['admin']) && isset($_POST['clear_transactions'])) {
                 <!-- Market Conversion Rates -->
                 <div class="rate-section">
                     <h4>🌍 Market Conversion Rates</h4>
+                    <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">Set the current market rates for automatic selling rate calculation</p>
                     <div class="rate-grid">
-                        <div class="rate-input-group">
-                            <label>1 EUR = ? GBP</label>
-                            <input type="number" name="eur_to_gbp" step="0.00001" 
-                                   value="<?= $data['market_rates']['EUR_to_GBP'] ?>" required>
-                        </div>
                         <div class="rate-input-group">
                             <label>1 EUR = ? USD</label>
                             <input type="number" name="eur_to_usd" step="0.00001" 
@@ -177,42 +193,35 @@ if (isset($_SESSION['admin']) && isset($_POST['clear_transactions'])) {
                             <input type="number" name="gbp_to_usd" step="0.00001" 
                                    value="<?= $data['market_rates']['GBP_to_USD'] ?>" required>
                         </div>
-                        <div class="rate-input-group">
-                            <label>1 GBP = ? EUR</label>
-                            <input type="number" name="gbp_to_eur" step="0.00001" 
-                                   value="<?= $data['market_rates']['GBP_to_EUR'] ?>" required>
-                        </div>
-                        <div class="rate-input-group">
-                            <label>1 USD = ? EUR</label>
-                            <input type="number" name="usd_to_eur" step="0.00001" 
-                                   value="<?= $data['market_rates']['USD_to_EUR'] ?>" required>
-                        </div>
-                        <div class="rate-input-group">
-                            <label>1 USD = ? GBP</label>
-                            <input type="number" name="usd_to_gbp" step="0.00001" 
-                                   value="<?= $data['market_rates']['USD_to_GBP'] ?>" required>
-                        </div>
                     </div>
                 </div>
 
                 <!-- Admin Selling Rates -->
                 <div class="rate-section">
                     <h4>💰 Your Selling Rates (What you can sell for)</h4>
+                    <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">
+                        <strong>Set only USD rate - EUR and GBP will be auto-calculated!</strong><br>
+                        Example: If 1 USD = 4000 MWK and market rate is 1 EUR = 1.148 USD, then 1 EUR = 4592 MWK
+                    </p>
                     <div class="rate-grid">
-                        <div class="rate-input-group">
-                            <label>1 GBP = ? MWK (your rate)</label>
-                            <input type="number" name="admin_gbp" step="0.01" 
-                                   value="<?= $data['admin_selling_rates']['GBP'] ?>" required>
-                        </div>
                         <div class="rate-input-group">
                             <label>1 USD = ? MWK (your rate)</label>
                             <input type="number" name="admin_usd" step="0.01" 
                                    value="<?= $data['admin_selling_rates']['USD'] ?>" required>
                         </div>
                         <div class="rate-input-group">
-                            <label>1 EUR = ? MWK (your rate)</label>
-                            <input type="number" name="admin_eur" step="0.01" 
-                                   value="<?= $data['admin_selling_rates']['EUR'] ?>" required>
+                            <label>1 EUR = ? MWK (auto-calculated)</label>
+                            <input type="number" step="0.01" 
+                                   value="<?= $data['admin_selling_rates']['EUR'] ?>" readonly 
+                                   style="background: #f0f0f0; cursor: not-allowed;">
+                            <small style="color: #666; font-size: 0.75rem;">Auto: USD rate × EUR/USD market rate</small>
+                        </div>
+                        <div class="rate-input-group">
+                            <label>1 GBP = ? MWK (auto-calculated)</label>
+                            <input type="number" step="0.01" 
+                                   value="<?= $data['admin_selling_rates']['GBP'] ?>" readonly 
+                                   style="background: #f0f0f0; cursor: not-allowed;">
+                            <small style="color: #666; font-size: 0.75rem;">Auto: USD rate × GBP/USD market rate</small>
                         </div>
                     </div>
                 </div>
@@ -282,15 +291,31 @@ if (isset($_SESSION['admin']) && isset($_POST['clear_transactions'])) {
                 <div class="no-transactions">No transactions yet.</div>
             <?php else: ?>
                 <div class="transactions-list">
-                    <?php foreach (array_reverse(array_slice($data['transactions'], -5)) as $transaction): ?>
+                    <?php 
+                    $transactions = $data['transactions'];
+                    $reversed = array_reverse($transactions);
+                    $displayed = array_slice($reversed, 0, 10); // Show last 10 transactions
+                    foreach ($displayed as $idx => $transaction): 
+                        // Calculate original index for deletion
+                        $original_index = count($transactions) - 1 - $idx;
+                    ?>
                     <div class="transaction-item">
                         <div class="transaction-header">
                             <div class="transaction-amount">
                                 <?= $transaction['currency'] ?> <?= number_format($transaction['amount'], 2) ?> 
                                 → MWK <?= number_format($transaction['mwk_given_to_customer'], 2) ?>
                             </div>
-                            <div class="transaction-profit positive">
-                                +<?= number_format($transaction['best_profit'], 2) ?> MWK
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <div class="transaction-profit positive">
+                                    +<?= number_format($transaction['best_profit'], 2) ?> MWK
+                                </div>
+                                <form method="POST" style="margin: 0;">
+                                    <input type="hidden" name="transaction_index" value="<?= $original_index ?>">
+                                    <button type="submit" name="delete_transaction" 
+                                            class="delete-transaction-btn" 
+                                            onclick="return confirm('Delete this transaction?')"
+                                            title="Delete transaction">✕</button>
+                                </form>
                             </div>
                         </div>
                         <div class="transaction-details">
