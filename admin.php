@@ -222,7 +222,7 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
                     <?php 
                     $transactions = $data['transactions'];
                     $reversed = array_reverse($transactions);
-                    $displayed = array_slice($reversed, 0, 10); // Show last 10 transactions
+                    $displayed = array_slice($reversed, 0, 10); // Show 10 most recent transactions
                     foreach ($displayed as $idx => $transaction): 
                         // Calculate original index for deletion
                         $original_index = count($transactions) - 1 - $idx;
