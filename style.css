@@ -6,9 +6,9 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-    background: #f5f5f5;
+    background: #fafafa;
     color: #333;
-    line-height: 1.4;
+    line-height: 1.6;
 }
 
 .container {
@@ -20,40 +20,40 @@ body {
 /* Header */
 header {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 32px;
 }
 
 header h1 {
-    font-size: 1.8rem;
-    margin-bottom: 5px;
-    color: #2c3e50;
-    font-weight: 300;
+    font-size: 1.75rem;
+    margin-bottom: 8px;
+    color: #1a1a1a;
+    font-weight: 600;
 }
 
 header p {
-    color: #7f8c8d;
+    color: #666;
     font-size: 0.9rem;
 }
 
 /* Cards */
 .calculator-card, .admin-login, .admin-section, .profit-summary {
     background: white;
-    border-radius: 12px;
-    padding: 20px;
+    border-radius: 8px;
+    padding: 24px;
     margin-bottom: 20px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    border: 1px solid #e0e0e0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border: 1px solid #e5e5e5;
 }
 
 /* Forms */
 .form-group {
-    margin-bottom: 16px;
+    margin-bottom: 20px;
 }
 
 .currency-row {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
-    gap: 10px;
+    gap: 12px;
     align-items: end;
     margin-bottom: 20px;
 }
@@ -67,103 +67,105 @@ header p {
 
 .arrow {
     font-size: 1.5rem;
-    color: #3498db;
+    color: #0066cc;
     font-weight: bold;
 }
 
 label {
     display: block;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     font-weight: 500;
-    color: #555;
-    font-size: 0.9rem;
+    color: #444;
+    font-size: 0.875rem;
 }
 
 input, select {
     width: 100%;
-    padding: 12px;
-    border: 2px solid #ddd;
-    border-radius: 8px;
-    font-size: 16px;
+    padding: 12px 14px;
+    border: 1px solid #d1d1d1;
+    border-radius: 6px;
+    font-size: 15px;
     background: white;
-    transition: border-color 0.2s;
+    transition: all 0.2s ease;
 }
 
 input:focus, select:focus {
     outline: none;
-    border-color: #3498db;
+    border-color: #0066cc;
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
 }
 
 input.readonly {
-    background: #f8f9fa;
+    background: #f5f5f5;
     color: #666;
 }
 
 /* Buttons */
 .convert-btn, .calculate-btn, .save-btn, .logout-btn, .danger-btn {
-    background: #2c3e50;
+    background: #0066cc;
     color: white;
     border: none;
-    padding: 14px 20px;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    font-weight: 500;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 0.9375rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.2s ease;
     width: 100%;
 }
 
 .convert-btn:hover, .calculate-btn:hover {
-    background: #34495e;
+    background: #0052a3;
+    transform: translateY(-1px);
 }
 
 .button-group {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 12px;
 }
 
 .calculate-btn {
-    background: #3498db;
+    background: #0066cc;
 }
 
 .calculate-btn:hover {
-    background: #2980b9;
+    background: #0052a3;
 }
 
 .save-btn {
-    background: #27ae60;
+    background: #059669;
 }
 
 .save-btn:hover {
-    background: #229954;
+    background: #047857;
 }
 
 .logout-btn {
-    background: #95a5a6;
+    background: #6b7280;
     width: auto;
     padding: 8px 16px;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     float: right;
 }
 
 .logout-btn:hover {
-    background: #7f8c8d;
+    background: #4b5563;
 }
 
 .danger-btn {
-    background: #e74c3c;
+    background: #dc2626;
     width: auto;
     padding: 8px 16px;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
 }
 
 .danger-btn:hover {
-    background: #c0392b;
+    background: #b91c1c;
 }
 
 .delete-transaction-btn {
-    background: #e74c3c;
+    background: #dc2626;
     color: white;
     border: none;
     width: 24px;
@@ -180,59 +182,59 @@ input.readonly {
 }
 
 .delete-transaction-btn:hover {
-    background: #c0392b;
+    background: #b91c1c;
 }
 
 /* Result Display */
 .result-card {
-    background: #ecf0f1;
-    border-radius: 8px;
+    background: #f9fafb;
+    border-radius: 6px;
     padding: 20px;
     margin-top: 20px;
     text-align: center;
-    border: 2px solid #bdc3c7;
+    border: 1px solid #e5e7eb;
 }
 
 .result-row {
-    font-size: 1.2rem;
-    font-weight: 500;
+    font-size: 1.25rem;
+    font-weight: 600;
     margin-bottom: 8px;
 }
 
 .input-amount {
-    color: #2c3e50;
+    color: #1a1a1a;
 }
 
 .equals {
-    margin: 0 10px;
-    color: #7f8c8d;
+    margin: 0 12px;
+    color: #6b7280;
 }
 
 .output-amount {
-    color: #27ae60;
-    font-weight: 600;
+    color: #059669;
+    font-weight: 700;
 }
 
 .rate-info {
-    font-size: 0.85rem;
-    color: #7f8c8d;
+    font-size: 0.875rem;
+    color: #6b7280;
 }
 
 /* Rates Display */
 .rates-display {
     background: white;
-    border-radius: 12px;
-    padding: 20px;
+    border-radius: 8px;
+    padding: 24px;
     margin-bottom: 20px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    border: 1px solid #e0e0e0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border: 1px solid #e5e5e5;
 }
 
 .rates-display h3 {
     margin-bottom: 20px;
-    color: #2c3e50;
-    font-size: 1.1rem;
-    font-weight: 500;
+    color: #1a1a1a;
+    font-size: 1.125rem;
+    font-weight: 600;
     text-align: center;
 }
 
@@ -245,35 +247,35 @@ input.readonly {
 }
 
 .rates-section h4 {
-    color: #34495e;
-    font-size: 0.95rem;
-    margin-bottom: 10px;
-    font-weight: 500;
+    color: #1a1a1a;
+    font-size: 1rem;
+    margin-bottom: 12px;
+    font-weight: 600;
 }
 
 .rates-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
 }
 
 .rate-row {
     display: flex;
     justify-content: space-between;
-    padding: 10px 12px;
-    background: #f8f9fa;
+    padding: 12px 16px;
+    background: #f9fafb;
     border-radius: 6px;
-    border-left: 3px solid #3498db;
+    border-left: 3px solid #0066cc;
 }
 
 .currency {
-    font-weight: 500;
-    color: #2c3e50;
+    font-weight: 600;
+    color: #1a1a1a;
 }
 
 .rate {
-    color: #27ae60;
-    font-weight: 500;
+    color: #059669;
+    font-weight: 600;
 }
 
 /* Admin Styles */
@@ -289,38 +291,39 @@ input.readonly {
 }
 
 .profit-summary {
-    background: #27ae60;
+    background: #059669;
     color: white;
     text-align: center;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border: none;
 }
 
 .profit-summary.total-profit {
-    background: #27ae60;
+    background: #059669;
 }
 
 .profit-summary.today-profit {
-    background: #3498db;
+    background: #0066cc;
 }
 
 .profit-summary h2 {
-    margin-bottom: 10px;
-    font-weight: 400;
+    margin-bottom: 12px;
+    font-weight: 600;
     font-size: 1rem;
+    opacity: 0.95;
 }
 
 .profit-amount {
-    font-size: 1.8rem;
-    font-weight: 600;
-    margin-bottom: 5px;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
 }
 
 .transaction-count {
     opacity: 0.9;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
 }
 
 @media (max-width: 768px) {
@@ -331,9 +334,9 @@ input.readonly {
 
 .admin-section h3 {
     margin-bottom: 20px;
-    color: #2c3e50;
-    font-size: 1.1rem;
-    font-weight: 500;
+    color: #1a1a1a;
+    font-size: 1.125rem;
+    font-weight: 600;
 }
 
 .section-header {
@@ -344,35 +347,35 @@ input.readonly {
 }
 
 .rate-direction-section {
-    margin-bottom: 25px;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: #f9fafb;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
 }
 
 .rate-direction-section h4 {
-    margin-bottom: 15px;
-    color: #2c3e50;
+    margin-bottom: 16px;
+    color: #1a1a1a;
     font-size: 1rem;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .rate-inputs {
     display: grid;
-    gap: 15px;
+    gap: 16px;
 }
 
 .rate-input-group label {
-    font-size: 0.85rem;
-    color: #666;
-    margin-bottom: 5px;
+    font-size: 0.875rem;
+    color: #444;
+    margin-bottom: 8px;
 }
 
 /* Transactions */
 .no-transactions {
     text-align: center;
-    color: #7f8c8d;
+    color: #6b7280;
     padding: 20px;
 }
 
@@ -382,78 +385,79 @@ input.readonly {
 }
 
 .transaction-item {
-    padding: 12px;
-    border: 1px solid #e9ecef;
+    padding: 14px;
+    border: 1px solid #e5e7eb;
     border-radius: 6px;
-    margin-bottom: 8px;
-    background: #f8f9fa;
+    margin-bottom: 10px;
+    background: #fafafa;
 }
 
 .transaction-main {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
 }
 
 .transaction-amount {
-    font-weight: 500;
-    color: #2c3e50;
-    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    font-size: 0.9375rem;
 }
 
 .transaction-profit {
-    font-weight: 600;
-    font-size: 0.9rem;
+    font-weight: 700;
+    font-size: 0.9375rem;
 }
 
 .transaction-profit.positive {
-    color: #27ae60;
+    color: #059669;
 }
 
 .transaction-profit.negative {
-    color: #e74c3c;
+    color: #dc2626;
 }
 
 .transaction-details {
     display: flex;
     justify-content: space-between;
-    font-size: 0.75rem;
-    color: #666;
-    gap: 10px;
+    font-size: 0.8125rem;
+    color: #6b7280;
+    gap: 12px;
 }
 
 /* Messages */
 .error {
-    background: #e74c3c;
+    background: #dc2626;
     color: white;
-    padding: 12px;
+    padding: 12px 16px;
     border-radius: 6px;
-    margin-bottom: 15px;
+    margin-bottom: 16px;
     text-align: center;
-    font-size: 0.9rem;
+    font-size: 0.9375rem;
 }
 
 .success {
-    background: #27ae60;
+    background: #059669;
     color: white;
-    padding: 12px;
+    padding: 12px 16px;
     border-radius: 6px;
-    margin-bottom: 15px;
+    margin-bottom: 16px;
     text-align: center;
-    font-size: 0.9rem;
+    font-size: 0.9375rem;
 }
 
 /* Footer */
 footer {
     text-align: center;
-    margin-top: 30px;
+    margin-top: 32px;
 }
 
 .admin-link, footer a, .back-link a {
-    color: #3498db;
+    color: #0066cc;
     text-decoration: none;
-    font-size: 0.9rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
 }
 
 .admin-link:hover, footer a:hover, .back-link a:hover {
@@ -462,7 +466,7 @@ footer {
 
 .back-link {
     text-align: center;
-    margin-top: 15px;
+    margin-top: 16px;
 }
 
 /* Responsive Design */
@@ -499,21 +503,20 @@ footer {
     }
 }
 
-/* Previous CSS remains the same, add these new styles: */
-
+/* Rate Section Updates */
 .rate-comparison-section {
-    margin-bottom: 30px;
+    margin-bottom: 24px;
     padding: 20px;
-    background: #f8f9fa;
-    border-radius: 12px;
-    border: 1px solid #e9ecef;
+    background: #f9fafb;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
 }
 
 .rate-comparison-section h4 {
     margin-bottom: 20px;
-    color: #2c3e50;
-    font-size: 1.1rem;
-    font-weight: 500;
+    color: #1a1a1a;
+    font-size: 1.125rem;
+    font-weight: 600;
     text-align: center;
 }
 
@@ -524,26 +527,26 @@ footer {
 
 .currency-rate-block {
     background: white;
-    border-radius: 10px;
+    border-radius: 6px;
     padding: 20px;
-    border: 1px solid #dee2e6;
+    border: 1px solid #e5e7eb;
 }
 
 .currency-rate-block h5 {
-    margin-bottom: 15px;
-    color: #2c3e50;
+    margin-bottom: 16px;
+    color: #1a1a1a;
     font-size: 1rem;
     font-weight: 600;
     text-align: center;
-    border-bottom: 2px solid #3498db;
-    padding-bottom: 8px;
+    border-bottom: 2px solid #0066cc;
+    padding-bottom: 10px;
 }
 
 .rate-pair {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    margin-bottom: 15px;
+    gap: 16px;
+    margin-bottom: 16px;
 }
 
 .rate-input-group {
@@ -552,48 +555,48 @@ footer {
 }
 
 .rate-input-group label {
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     font-weight: 500;
-    margin-bottom: 5px;
-    color: #495057;
+    margin-bottom: 8px;
+    color: #444;
 }
 
 .rate-input-group input {
-    padding: 10px;
-    margin-bottom: 5px;
+    padding: 12px 14px;
+    margin-bottom: 4px;
 }
 
 .rate-note {
-    font-size: 0.7rem;
-    color: #6c757d;
+    font-size: 0.75rem;
+    color: #6b7280;
     font-style: italic;
     text-align: center;
 }
 
 .profit-preview {
     text-align: center;
-    padding: 8px;
-    background: #e8f5e8;
+    padding: 10px;
+    background: #d1fae5;
     border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: #27ae60;
-    border: 1px solid #c3e6c3;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #059669;
+    border: 1px solid #a7f3d0;
 }
 
 .transaction-details {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    font-size: 0.7rem;
-    color: #666;
+    font-size: 0.8125rem;
+    color: #6b7280;
 }
 
 /* Mobile responsiveness for rate blocks */
 @media (max-width: 768px) {
     .rate-pair {
         grid-template-columns: 1fr;
-        gap: 10px;
+        gap: 12px;
     }
     
     .transaction-details {
@@ -608,32 +611,30 @@ footer {
     
     .transaction-details {
         flex-direction: row;
-        gap: 15px;
+        gap: 16px;
     }
 }
 
-/* Previous CSS remains the same, add these new styles: */
-
 .rate-section {
-    margin-bottom: 25px;
+    margin-bottom: 24px;
     padding: 20px;
     background: white;
-    border-radius: 10px;
-    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
 }
 
 .rate-section h4 {
-    margin-bottom: 15px;
-    color: #2c3e50;
+    margin-bottom: 16px;
+    color: #1a1a1a;
     font-size: 1rem;
     font-weight: 600;
-    padding-bottom: 8px;
-    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #0066cc;
 }
 
 .rate-grid {
     display: grid;
-    gap: 15px;
+    gap: 16px;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
 
@@ -643,17 +644,17 @@ footer {
 }
 
 .rate-input-group label {
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     font-weight: 500;
-    margin-bottom: 5px;
-    color: #495057;
+    margin-bottom: 8px;
+    color: #444;
 }
 
 .rate-input-group input {
-    padding: 10px;
-    border: 2px solid #ddd;
+    padding: 12px 14px;
+    border: 1px solid #d1d1d1;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 15px;
 }
 
 .profit-preview-grid {
@@ -664,69 +665,70 @@ footer {
 
 .profit-preview-card {
     background: white;
-    border-radius: 10px;
+    border-radius: 6px;
     padding: 20px;
-    border: 1px solid #dee2e6;
+    border: 1px solid #e5e7eb;
 }
 
 .profit-preview-card h4 {
     text-align: center;
-    color: #2c3e50;
-    margin-bottom: 15px;
-    font-size: 1.1rem;
-    border-bottom: 2px solid #27ae60;
-    padding-bottom: 8px;
+    color: #1a1a1a;
+    margin-bottom: 16px;
+    font-size: 1.125rem;
+    font-weight: 600;
+    border-bottom: 2px solid #059669;
+    padding-bottom: 10px;
 }
 
 .preview-details {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
 }
 
 .profit-option {
     display: flex;
     justify-content: space-between;
-    padding: 8px 12px;
-    background: #f8f9fa;
+    padding: 10px 14px;
+    background: #f9fafb;
     border-radius: 6px;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
 }
 
 .profit-option.best-option {
-    background: #d4edda;
-    border: 1px solid #c3e6cb;
-    font-weight: 500;
+    background: #d1fae5;
+    border: 1px solid #a7f3d0;
+    font-weight: 600;
 }
 
 .profit-amount, .option-profit {
-    color: #27ae60;
-    font-weight: 600;
+    color: #059669;
+    font-weight: 700;
 }
 
 .transaction-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
 .transaction-strategy {
-    font-size: 0.8rem;
-    color: #17a2b8;
-    font-weight: 500;
+    font-size: 0.8125rem;
+    color: #0066cc;
+    font-weight: 600;
 }
 
 .profit-breakdown {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid #e9ecef;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e5e7eb;
 }
 
 .profit-breakdown .profit-option {
-    margin-bottom: 5px;
-    font-size: 0.75rem;
-    padding: 6px 10px;
+    margin-bottom: 6px;
+    font-size: 0.8125rem;
+    padding: 8px 12px;
 }
 
 .option-desc {
@@ -746,7 +748,7 @@ footer {
     .transaction-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 5px;
+        gap: 8px;
     }
 }
 
@@ -754,13 +756,13 @@ footer {
 .rate-comparison {
     margin-top: 20px;
     padding-top: 20px;
-    border-top: 2px solid #ddd;
+    border-top: 2px solid #e5e7eb;
 }
 
 .rate-comparison h4 {
-    color: #2c3e50;
+    color: #1a1a1a;
     font-size: 1rem;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     font-weight: 600;
 }
 
@@ -775,28 +777,29 @@ footer {
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border-left: 3px solid #95a5a6;
+    background: #f9fafb;
+    border-radius: 6px;
+    border-left: 3px solid #9ca3af;
 }
 
 .comparison-item.our-rate {
-    background: #d4edda;
-    border-left: 3px solid #27ae60;
-    font-weight: 600;
+    background: #d1fae5;
+    border-left: 3px solid #059669;
+    font-weight: 700;
 }
 
 .service-name {
-    font-size: 0.9rem;
-    color: #2c3e50;
+    font-size: 0.9375rem;
+    color: #1a1a1a;
 }
 
 .comparison-amount {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #27ae60;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: #059669;
 }
 
 .comparison-item:not(.our-rate) .comparison-amount {
-    color: #7f8c8d;
+    color: #6b7280;
+}
 }
