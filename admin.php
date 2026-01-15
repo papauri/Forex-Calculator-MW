@@ -76,6 +76,7 @@ if (isset($_SESSION['admin']) && isset($_POST['update_rates'])) {
     // Market conversion rates (how currencies convert to each other)
     $eur_to_usd = floatval($_POST['eur_to_usd']); // e.g., 1.148
     $gbp_to_usd = floatval($_POST['gbp_to_usd']); // e.g., 1.322
+    $eur_to_gbp = floatval($_POST['eur_to_gbp']); // e.g., 0.877
     
     // Customer rates
     $customer_usd = floatval($_POST['customer_usd']);
