@@ -40,6 +40,7 @@ if (isset($_POST['amount']) && $_POST['amount'] !== '') {
     $amount = floatval($_POST['amount']);
     $currency = $_POST['currency'];
     $direction = $_POST['direction'] ?? 'foreign_to_mwk'; // Default: foreign currency to MWK
+    $transaction_name = trim($_POST['transaction_name'] ?? '');
     
     if ($amount > 0) {
         if ($direction === 'foreign_to_mwk') {
@@ -87,6 +88,7 @@ if (isset($_POST['amount']) && $_POST['amount'] !== '') {
             // Log transaction
             $transaction = [
                 'date' => date('Y-m-d H:i:s'),
+                'name' => $transaction_name,
                 'amount' => $amount,
                 'currency' => $currency,
                 'customer_rate' => $customer_rate,
@@ -142,6 +144,15 @@ if (isset($_POST['amount']) && $_POST['amount'] !== '') {
 
         <div class="calculator-card">
             <form method="POST" class="calculator-form">
+                <div class="form-group">
+                    <label for="transaction_name">Transaction Name (Optional)</label>
+                    <input type="text" 
+                           id="transaction_name" 
+                           name="transaction_name" 
+                           placeholder="e.g., John Doe, Payment for services" 
+                           value="<?= htmlspecialchars($_POST['transaction_name'] ?? '') ?>">
+                </div>
+
                 <div class="form-group">
                     <label for="direction">Calculation Direction</label>
                     <select id="direction" name="direction" onchange="updateLabels()" required>
