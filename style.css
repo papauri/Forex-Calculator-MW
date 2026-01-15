@@ -701,3 +701,54 @@ footer {
         gap: 5px;
     }
 }
+
+/* Rate Comparison Styles */
+.rate-comparison {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid #ddd;
+}
+
+.rate-comparison h4 {
+    color: #2c3e50;
+    font-size: 1rem;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.comparison-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.comparison-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 3px solid #95a5a6;
+}
+
+.comparison-item.our-rate {
+    background: #d4edda;
+    border-left: 3px solid #27ae60;
+    font-weight: 600;
+}
+
+.service-name {
+    font-size: 0.9rem;
+    color: #2c3e50;
+}
+
+.comparison-amount {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #27ae60;
+}
+
+.comparison-item:not(.our-rate) .comparison-amount {
+    color: #7f8c8d;
+}
