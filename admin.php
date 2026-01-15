@@ -528,13 +528,13 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
             const eurRate = parseFloat(this.value);
             if (eurRate > 0) {
                 isAutoCalculating = true;
-                // If 1 EUR = 4200 MWK and market shows 1 USD = 0.852 EUR
-                // then 1 USD = 4200 * 0.852 MWK
-                customerUSD.value = (eurRate * marketRates.USD_to_EUR).toFixed(2);
+                // If 1 EUR = 4200 MWK and EUR_to_USD = 1.1738 (meaning 1 EUR = 1.1738 USD)
+                // then 1.1738 USD = 4200 MWK, so 1 USD = 4200 / 1.1738 MWK
+                customerUSD.value = (eurRate / marketRates.EUR_to_USD).toFixed(2);
                 
-                // If 1 EUR = 4200 MWK and EUR_to_GBP = 1.14 (meaning to convert EUR to equivalent GBP value)
-                // then 1 GBP = 4200 * 1.14 MWK
-                customerGBP.value = (eurRate * marketRates.EUR_to_GBP).toFixed(2);
+                // If 1 EUR = 4200 MWK and EUR_to_GBP = 0.88 (meaning 1 EUR = 0.88 GBP)
+                // then 0.88 GBP = 4200 MWK, so 1 GBP = 4200 / 0.88 MWK
+                customerGBP.value = (eurRate / marketRates.EUR_to_GBP).toFixed(2);
                 isAutoCalculating = false;
             }
         });
@@ -546,12 +546,12 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
             const usdRate = parseFloat(this.value);
             if (usdRate > 0) {
                 isAutoCalculating = true;
-                // If 1 USD = 4000 MWK and USD_to_EUR shows how to convert USD value to EUR value
-                // then 1 EUR = 4000 * EUR_to_USD (inverse relationship)
+                // If 1 USD = 4000 MWK and EUR_to_USD = 1.1738 (meaning 1 EUR = 1.1738 USD)
+                // then 1 EUR = 1.1738 × (4000/1) = 1.1738 × 4000 MWK
                 customerEUR.value = (usdRate * marketRates.EUR_to_USD).toFixed(2);
                 
-                // If 1 USD = 4000 MWK and USD_to_GBP shows how to convert USD value to GBP value
-                // then 1 GBP = 4000 * GBP_to_USD (inverse relationship)
+                // If 1 USD = 4000 MWK and GBP_to_USD = 1.28 (meaning 1 GBP = 1.28 USD)
+                // then 1 GBP = 1.28 × (4000/1) = 1.28 × 4000 MWK
                 customerGBP.value = (usdRate * marketRates.GBP_to_USD).toFixed(2);
                 isAutoCalculating = false;
             }
@@ -564,13 +564,13 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
             const gbpRate = parseFloat(this.value);
             if (gbpRate > 0) {
                 isAutoCalculating = true;
-                // If 1 GBP = 5200 MWK and GBP_to_EUR shows how to convert GBP value to EUR value
-                // then 1 EUR = 5200 * GBP_to_EUR
-                customerEUR.value = (gbpRate * marketRates.GBP_to_EUR).toFixed(2);
+                // If 1 GBP = 5200 MWK and EUR_to_GBP = 0.88 (meaning 1 EUR = 0.88 GBP)
+                // then 1 EUR = 0.88 × 5200 MWK
+                customerEUR.value = (gbpRate * marketRates.EUR_to_GBP).toFixed(2);
                 
-                // If 1 GBP = 5200 MWK and GBP_to_USD shows how to convert GBP value to USD value
-                // then 1 USD = 5200 * GBP_to_USD
-                customerUSD.value = (gbpRate * marketRates.GBP_to_USD).toFixed(2);
+                // If 1 GBP = 5200 MWK and USD_to_GBP = 0.781 (meaning 1 USD = 0.781 GBP)
+                // then 1 USD = 0.781 × 5200 MWK
+                customerUSD.value = (gbpRate * marketRates.USD_to_GBP).toFixed(2);
                 isAutoCalculating = false;
             }
         });
