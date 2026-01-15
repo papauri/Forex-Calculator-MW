@@ -59,8 +59,14 @@ if (isset($_SESSION['admin']) && isset($_POST['update_rates'])) {
     $eur_to_usd = floatval($_POST['eur_to_usd']); // e.g., 1.148
     $gbp_to_usd = floatval($_POST['gbp_to_usd']); // e.g., 1.322
     
-    // Validate that conversion rates are not zero to prevent division by zero
-    if ($eur_to_usd <= 0 || $gbp_to_usd <= 0 || $usd_selling_rate <= 0) {
+    // Customer rates
+    $customer_usd = floatval($_POST['customer_usd']);
+    $customer_eur = floatval($_POST['customer_eur']);
+    $customer_gbp = floatval($_POST['customer_gbp']);
+    
+    // Validate that all rates are positive to prevent division by zero and invalid configurations
+    if ($eur_to_usd <= 0 || $gbp_to_usd <= 0 || $usd_selling_rate <= 0 || 
+        $customer_usd <= 0 || $customer_eur <= 0 || $customer_gbp <= 0) {
         $error = 'All rates must be greater than zero!';
     } else {
         // Auto-calculate other selling rates based on USD rate
@@ -69,9 +75,9 @@ if (isset($_SESSION['admin']) && isset($_POST['update_rates'])) {
         $data['admin_selling_rates']['GBP'] = $usd_selling_rate * $gbp_to_usd; // e.g., 4000 * 1.322 = 5288
         
         // Customer rates (what customers get - should be lower than selling rates)
-        $data['customer_rates']['USD'] = floatval($_POST['customer_usd']);
-        $data['customer_rates']['EUR'] = floatval($_POST['customer_eur']);
-        $data['customer_rates']['GBP'] = floatval($_POST['customer_gbp']);
+        $data['customer_rates']['USD'] = $customer_usd;
+        $data['customer_rates']['EUR'] = $customer_eur;
+        $data['customer_rates']['GBP'] = $customer_gbp;
         
         // Store market conversion rates for calculations
         $data['market_rates']['EUR_to_USD'] = $eur_to_usd;
