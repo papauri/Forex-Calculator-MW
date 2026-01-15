@@ -39,72 +39,89 @@ $profit_breakdown = null;
 if (isset($_POST['amount']) && $_POST['amount'] !== '') {
     $amount = floatval($_POST['amount']);
     $currency = $_POST['currency'];
+    $direction = $_POST['direction'] ?? 'foreign_to_mwk'; // Default: foreign currency to MWK
     
     if ($amount > 0) {
-        $customer_rate = $data['customer_rates'][$currency];
-        $mwk_given = $amount * $customer_rate;
-        
-        // Calculate profit options by converting to other currencies
-        $profit_options = [];
-        
-        // Option 1: Direct sale of the same currency
-        $direct_mwk = $amount * $data['admin_selling_rates'][$currency];
-        $direct_profit = $direct_mwk - $mwk_given;
-        $profit_options['direct_' . $currency] = [
-            'description' => "Sell $amount $currency directly",
-            'amount_received' => $direct_mwk,
-            'profit' => $direct_profit
-        ];
-        
-        // Option 2 & 3: Convert to other currencies first, then sell
-        foreach ($data['market_rates'] as $rate_key => $rate_value) {
-            $from_curr = substr($rate_key, 0, 3);
-            $to_curr = substr($rate_key, -3);
+        if ($direction === 'foreign_to_mwk') {
+            // Foreign currency to MWK (original calculation)
+            $customer_rate = $data['customer_rates'][$currency];
+            $mwk_given = $amount * $customer_rate;
             
-            if ($from_curr === $currency) {
-                $converted_amount = $amount * $rate_value;
-                $converted_mwk = $converted_amount * $data['admin_selling_rates'][$to_curr];
-                $converted_profit = $converted_mwk - $mwk_given;
+            // Calculate profit options by converting to other currencies
+            $profit_options = [];
+            
+            // Option 1: Direct sale of the same currency
+            $direct_mwk = $amount * $data['admin_selling_rates'][$currency];
+            $direct_profit = $direct_mwk - $mwk_given;
+            $profit_options['direct_' . $currency] = [
+                'description' => "Sell $amount $currency directly",
+                'amount_received' => $direct_mwk,
+                'profit' => $direct_profit
+            ];
+            
+            // Option 2 & 3: Convert to other currencies first, then sell
+            foreach ($data['market_rates'] as $rate_key => $rate_value) {
+                $from_curr = substr($rate_key, 0, 3);
+                $to_curr = substr($rate_key, -3);
                 
-                $profit_options['convert_to_' . $to_curr] = [
-                    'description' => "Convert $amount $currency to $converted_amount $to_curr, then sell",
-                    'amount_received' => $converted_mwk,
-                    'profit' => $converted_profit,
-                    'conversion_rate' => $rate_value,
-                    'converted_amount' => $converted_amount,
-                    'target_currency' => $to_curr
-                ];
+                if ($from_curr === $currency) {
+                    $converted_amount = $amount * $rate_value;
+                    $converted_mwk = $converted_amount * $data['admin_selling_rates'][$to_curr];
+                    $converted_profit = $converted_mwk - $mwk_given;
+                    
+                    $profit_options['convert_to_' . $to_curr] = [
+                        'description' => "Convert $amount $currency to $converted_amount $to_curr, then sell",
+                        'amount_received' => $converted_mwk,
+                        'profit' => $converted_profit,
+                        'conversion_rate' => $rate_value,
+                        'converted_amount' => $converted_amount,
+                        'target_currency' => $to_curr
+                    ];
+                }
             }
+            
+            // Find best profit option
+            $best_option = max($profit_options);
+            $best_profit = $best_option['profit'];
+            
+            // Log transaction
+            $transaction = [
+                'date' => date('Y-m-d H:i:s'),
+                'amount' => $amount,
+                'currency' => $currency,
+                'customer_rate' => $customer_rate,
+                'mwk_given_to_customer' => $mwk_given,
+                'best_strategy' => array_search($best_option, $profit_options),
+                'best_profit' => $best_profit,
+                'all_options' => $profit_options
+            ];
+            
+            $data['transactions'][] = $transaction;
+            $data['total_profit'] += $best_profit;
+            file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT));
+            
+            $result = [
+                'amount' => $amount,
+                'currency' => $currency,
+                'mwk_amount' => number_format($mwk_given, 2),
+                'rate' => $customer_rate,
+                'direction' => 'foreign_to_mwk'
+            ];
+            
+            $profit_breakdown = $profit_options;
+        } else {
+            // MWK to Foreign currency (reverse calculation)
+            $customer_rate = $data['customer_rates'][$currency];
+            $foreign_amount = $amount / $customer_rate;
+            
+            $result = [
+                'mwk_amount' => number_format($amount, 2),
+                'currency' => $currency,
+                'amount' => $foreign_amount,
+                'rate' => $customer_rate,
+                'direction' => 'mwk_to_foreign'
+            ];
         }
-        
-        // Find best profit option
-        $best_option = max($profit_options);
-        $best_profit = $best_option['profit'];
-        
-        // Log transaction
-        $transaction = [
-            'date' => date('Y-m-d H:i:s'),
-            'amount' => $amount,
-            'currency' => $currency,
-            'customer_rate' => $customer_rate,
-            'mwk_given_to_customer' => $mwk_given,
-            'best_strategy' => array_search($best_option, $profit_options),
-            'best_profit' => $best_profit,
-            'all_options' => $profit_options
-        ];
-        
-        $data['transactions'][] = $transaction;
-        $data['total_profit'] += $best_profit;
-        file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT));
-        
-        $result = [
-            'amount' => $amount,
-            'currency' => $currency,
-            'mwk_amount' => number_format($mwk_given, 2),
-            'rate' => $customer_rate
-        ];
-        
-        $profit_breakdown = $profit_options;
     }
 }
 ?>
@@ -126,7 +143,19 @@ if (isset($_POST['amount']) && $_POST['amount'] !== '') {
         <div class="calculator-card">
             <form method="POST" class="calculator-form">
                 <div class="form-group">
-                    <label for="amount">Amount</label>
+                    <label for="direction">Calculation Direction</label>
+                    <select id="direction" name="direction" onchange="updateLabels()" required>
+                        <option value="foreign_to_mwk" <?= (($_POST['direction'] ?? 'foreign_to_mwk') === 'foreign_to_mwk') ? 'selected' : '' ?>>
+                            Foreign Currency → MWK
+                        </option>
+                        <option value="mwk_to_foreign" <?= (($_POST['direction'] ?? 'foreign_to_mwk') === 'mwk_to_foreign') ? 'selected' : '' ?>>
+                            MWK → Foreign Currency
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="amount" id="amount-label">Amount</label>
                     <input type="number" 
                            id="amount" 
                            name="amount" 
@@ -158,14 +187,36 @@ if (isset($_POST['amount']) && $_POST['amount'] !== '') {
             <?php if ($result): ?>
             <div class="result-card">
                 <div class="result-row">
-                    <span class="input-amount"><?= $result['currency'] ?> <?= number_format($result['amount'], 2) ?></span>
-                    <span class="equals">=</span>
-                    <span class="output-amount">MWK <?= $result['mwk_amount'] ?></span>
+                    <?php if ($result['direction'] === 'foreign_to_mwk'): ?>
+                        <span class="input-amount"><?= $result['currency'] ?> <?= number_format($result['amount'], 2) ?></span>
+                        <span class="equals">=</span>
+                        <span class="output-amount">MWK <?= $result['mwk_amount'] ?></span>
+                    <?php else: ?>
+                        <span class="input-amount">MWK <?= $result['mwk_amount'] ?></span>
+                        <span class="equals">=</span>
+                        <span class="output-amount"><?= $result['currency'] ?> <?= number_format($result['amount'], 2) ?></span>
+                    <?php endif; ?>
                 </div>
                 <div class="rate-info">Rate: 1 <?= $result['currency'] ?> = <?= number_format($result['rate']) ?> MWK</div>
             </div>
             <?php endif; ?>
         </div>
+        
+        <script>
+        function updateLabels() {
+            const direction = document.getElementById('direction').value;
+            const amountLabel = document.getElementById('amount-label');
+            
+            if (direction === 'foreign_to_mwk') {
+                amountLabel.textContent = 'Foreign Currency Amount';
+            } else {
+                amountLabel.textContent = 'MWK Amount';
+            }
+        }
+        
+        // Update labels on page load
+        document.addEventListener('DOMContentLoaded', updateLabels);
+        </script>
 
         <div class="rates-display">
             <h3>Current Exchange Rates</h3>

@@ -19,24 +19,57 @@
         }
     },
     "usd_to_mwk": 4000,
-    "transactions": [],
-    "total_profit": 0,
+    "transactions": [
+        {
+            "date": "2026-01-15 13:58:17",
+            "amount": 100,
+            "currency": "GBP",
+            "customer_rate": 4800,
+            "mwk_given_to_customer": 480000,
+            "best_strategy": "convert_to_USD",
+            "best_profit": 54000,
+            "all_options": {
+                "direct_GBP": {
+                    "description": "Sell 100 GBP directly",
+                    "amount_received": 555500,
+                    "profit": 75500
+                },
+                "convert_to_USD": {
+                    "description": "Convert 100 GBP to 133.5 USD, then sell",
+                    "amount_received": 534000,
+                    "profit": 54000,
+                    "conversion_rate": 1.335,
+                    "converted_amount": 133.5,
+                    "target_currency": "USD"
+                },
+                "convert_to_EUR": {
+                    "description": "Convert 100 GBP to 114.96 EUR, then sell",
+                    "amount_received": 528816,
+                    "profit": 48816,
+                    "conversion_rate": 1.1496,
+                    "converted_amount": 114.96,
+                    "target_currency": "EUR"
+                }
+            }
+        }
+    ],
+    "total_profit": 54000,
     "customer_rates": {
         "GBP": 4800,
         "USD": 3650,
         "EUR": 4200
     },
     "market_rates": {
-        "EUR_to_GBP": 0.8632,
+        "EUR_to_GBP": 0.8786516853932584,
         "EUR_to_USD": 1.173,
         "GBP_to_USD": 1.335,
-        "GBP_to_EUR": 1.1496,
-        "USD_to_EUR": 0.88,
-        "USD_to_GBP": 0.76
+        "GBP_to_EUR": 1.1381074168797953,
+        "USD_to_EUR": 0.8525149190110827,
+        "USD_to_GBP": 0.7490636704119851
     },
     "admin_selling_rates": {
-        "GBP": 5555,
+        "GBP": 5340,
         "USD": 4000,
-        "EUR": 4600
+        "EUR": 4692
     }
 }
