@@ -494,14 +494,12 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
             USD_to_GBP: <?= $data['market_rates']['USD_to_GBP'] ?>
         };
         
-        // Track which field was last manually changed
-        let lastChanged = null;
+        // Flag to prevent circular updates
         let isAutoCalculating = false;
         
         // When EUR changes, auto-calculate USD and GBP
         customerEUR.addEventListener('input', function() {
             if (isAutoCalculating) return;
-            lastChanged = 'EUR';
             
             const eurRate = parseFloat(this.value);
             if (eurRate > 0) {
@@ -520,7 +518,6 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
         // When USD changes, auto-calculate EUR and GBP
         customerUSD.addEventListener('input', function() {
             if (isAutoCalculating) return;
-            lastChanged = 'USD';
             
             const usdRate = parseFloat(this.value);
             if (usdRate > 0) {
@@ -539,7 +536,6 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
         // When GBP changes, auto-calculate EUR and USD
         customerGBP.addEventListener('input', function() {
             if (isAutoCalculating) return;
-            lastChanged = 'GBP';
             
             const gbpRate = parseFloat(this.value);
             if (gbpRate > 0) {
