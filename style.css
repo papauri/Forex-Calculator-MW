@@ -291,7 +291,7 @@ input.readonly {
 }
 
 .profit-summary {
-    background: #059669;
+    background: #047857;
     color: white;
     text-align: center;
     border-radius: 8px;
@@ -301,11 +301,11 @@ input.readonly {
 }
 
 .profit-summary.total-profit {
-    background: #059669;
+    background: #047857;
 }
 
 .profit-summary.today-profit {
-    background: #0066cc;
+    background: #0052a3;
 }
 
 .profit-summary h2 {
@@ -801,5 +801,47 @@ footer {
 
 .comparison-item:not(.our-rate) .comparison-amount {
     color: #6b7280;
+}
+
+/* Profit Preview Controls */
+.profit-preview-controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 20px;
+    background: #f9fafb;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+}
+
+.profit-input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.profit-input-group label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #444;
+}
+
+.profit-input-group input {
+    padding: 10px 12px;
+    border: 1px solid #d1d1d1;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.profit-preview-controls .calculate-btn {
+    grid-column: 1 / -1;
+    margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+    .profit-preview-controls {
+        grid-template-columns: 1fr;
+    }
 }
 }
