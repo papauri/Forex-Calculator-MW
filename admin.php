@@ -308,20 +308,23 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
                 <!-- Customer Rates -->
                 <div class="rate-section">
                     <h4>📱 Customer Rates (What customers get)</h4>
+                    <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">
+                        <strong>Auto-calculation enabled:</strong> Change any rate and the others will auto-calculate based on market rates. You can still manually override any field.
+                    </p>
                     <div class="rate-grid">
                         <div class="rate-input-group">
                             <label>1 GBP = ? MWK</label>
-                            <input type="number" name="customer_gbp" step="0.01" 
+                            <input type="number" name="customer_gbp" id="customer_gbp" step="0.01" 
                                    value="<?= $data['customer_rates']['GBP'] ?>" required>
                         </div>
                         <div class="rate-input-group">
                             <label>1 USD = ? MWK</label>
-                            <input type="number" name="customer_usd" step="0.01" 
+                            <input type="number" name="customer_usd" id="customer_usd" step="0.01" 
                                    value="<?= $data['customer_rates']['USD'] ?>" required>
                         </div>
                         <div class="rate-input-group">
                             <label>1 EUR = ? MWK</label>
-                            <input type="number" name="customer_eur" step="0.01" 
+                            <input type="number" name="customer_eur" id="customer_eur" step="0.01" 
                                    value="<?= $data['customer_rates']['EUR'] ?>" required>
                         </div>
                     </div>
@@ -472,5 +475,87 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
         </footer>
         <?php endif; ?>
     </div>
+    
+    <script>
+    // Auto-calculation for customer rates
+    <?php if (isset($_SESSION['admin'])): ?>
+    document.addEventListener('DOMContentLoaded', function() {
+        const customerGBP = document.getElementById('customer_gbp');
+        const customerUSD = document.getElementById('customer_usd');
+        const customerEUR = document.getElementById('customer_eur');
+        
+        // Get market rates from PHP
+        const marketRates = {
+            EUR_to_USD: <?= $data['market_rates']['EUR_to_USD'] ?>,
+            EUR_to_GBP: <?= $data['market_rates']['EUR_to_GBP'] ?>,
+            GBP_to_USD: <?= $data['market_rates']['GBP_to_USD'] ?>,
+            GBP_to_EUR: <?= $data['market_rates']['GBP_to_EUR'] ?>,
+            USD_to_EUR: <?= $data['market_rates']['USD_to_EUR'] ?>,
+            USD_to_GBP: <?= $data['market_rates']['USD_to_GBP'] ?>
+        };
+        
+        // Track which field was last manually changed
+        let lastChanged = null;
+        let isAutoCalculating = false;
+        
+        // When EUR changes, auto-calculate USD and GBP
+        customerEUR.addEventListener('input', function() {
+            if (isAutoCalculating) return;
+            lastChanged = 'EUR';
+            
+            const eurRate = parseFloat(this.value);
+            if (eurRate > 0) {
+                isAutoCalculating = true;
+                // If 1 EUR = 4200 MWK and market shows 1 USD = 0.852 EUR
+                // then 1 USD = 4200 * 0.852 MWK
+                customerUSD.value = (eurRate * marketRates.USD_to_EUR).toFixed(2);
+                
+                // If 1 EUR = 4200 MWK and EUR_to_GBP = 1.14 (meaning to convert EUR to equivalent GBP value)
+                // then 1 GBP = 4200 * 1.14 MWK
+                customerGBP.value = (eurRate * marketRates.EUR_to_GBP).toFixed(2);
+                isAutoCalculating = false;
+            }
+        });
+        
+        // When USD changes, auto-calculate EUR and GBP
+        customerUSD.addEventListener('input', function() {
+            if (isAutoCalculating) return;
+            lastChanged = 'USD';
+            
+            const usdRate = parseFloat(this.value);
+            if (usdRate > 0) {
+                isAutoCalculating = true;
+                // If 1 USD = 4000 MWK and USD_to_EUR shows how to convert USD value to EUR value
+                // then 1 EUR = 4000 * EUR_to_USD (inverse relationship)
+                customerEUR.value = (usdRate * marketRates.EUR_to_USD).toFixed(2);
+                
+                // If 1 USD = 4000 MWK and USD_to_GBP shows how to convert USD value to GBP value
+                // then 1 GBP = 4000 * GBP_to_USD (inverse relationship)
+                customerGBP.value = (usdRate * marketRates.GBP_to_USD).toFixed(2);
+                isAutoCalculating = false;
+            }
+        });
+        
+        // When GBP changes, auto-calculate EUR and USD
+        customerGBP.addEventListener('input', function() {
+            if (isAutoCalculating) return;
+            lastChanged = 'GBP';
+            
+            const gbpRate = parseFloat(this.value);
+            if (gbpRate > 0) {
+                isAutoCalculating = true;
+                // If 1 GBP = 5200 MWK and GBP_to_EUR shows how to convert GBP value to EUR value
+                // then 1 EUR = 5200 * GBP_to_EUR
+                customerEUR.value = (gbpRate * marketRates.GBP_to_EUR).toFixed(2);
+                
+                // If 1 GBP = 5200 MWK and GBP_to_USD shows how to convert GBP value to USD value
+                // then 1 USD = 5200 * GBP_to_USD
+                customerUSD.value = (gbpRate * marketRates.GBP_to_USD).toFixed(2);
+                isAutoCalculating = false;
+            }
+        });
+    });
+    <?php endif; ?>
+    </script>
 </body>
 </html>
