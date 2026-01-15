@@ -24,6 +24,18 @@ if (!file_exists($dataFile)) {
             'USD' => 4300,  // Admin can sell 1 USD for 4300 MWK
             'EUR' => 4600   // Admin can sell 1 EUR for 4600 MWK
         ],
+        'bank_rates' => [
+            // Optional: Bank rates for comparison (what bank gives for foreign currency)
+            'GBP' => 0,
+            'USD' => 0,
+            'EUR' => 0
+        ],
+        'talkremit_rates' => [
+            // Optional: TalkRemit app rates for comparison
+            'GBP' => 0,
+            'USD' => 0,
+            'EUR' => 0
+        ],
         'transactions' => [],
         'total_profit' => 0
     ];
@@ -31,6 +43,14 @@ if (!file_exists($dataFile)) {
 }
 
 $data = json_decode(file_get_contents($dataFile), true);
+
+// Ensure backwards compatibility - add new rate fields if they don't exist
+if (!isset($data['bank_rates'])) {
+    $data['bank_rates'] = ['GBP' => 0, 'USD' => 0, 'EUR' => 0];
+}
+if (!isset($data['talkremit_rates'])) {
+    $data['talkremit_rates'] = ['GBP' => 0, 'USD' => 0, 'EUR' => 0];
+}
 
 // Handle conversion
 $result = null;
@@ -40,6 +60,7 @@ if (isset($_POST['amount']) && $_POST['amount'] !== '') {
     $amount = floatval($_POST['amount']);
     $currency = $_POST['currency'];
     $direction = $_POST['direction'] ?? 'foreign_to_mwk'; // Default: foreign currency to MWK
+    $transaction_name = trim($_POST['transaction_name'] ?? '');
     
     if ($amount > 0) {
         if ($direction === 'foreign_to_mwk') {
@@ -87,6 +108,7 @@ if (isset($_POST['amount']) && $_POST['amount'] !== '') {
             // Log transaction
             $transaction = [
                 'date' => date('Y-m-d H:i:s'),
+                'name' => $transaction_name,
                 'amount' => $amount,
                 'currency' => $currency,
                 'customer_rate' => $customer_rate,
@@ -143,6 +165,15 @@ if (isset($_POST['amount']) && $_POST['amount'] !== '') {
         <div class="calculator-card">
             <form method="POST" class="calculator-form">
                 <div class="form-group">
+                    <label for="transaction_name">Transaction Name (Optional)</label>
+                    <input type="text" 
+                           id="transaction_name" 
+                           name="transaction_name" 
+                           placeholder="e.g., John Doe, Payment for services" 
+                           value="<?= htmlspecialchars($_POST['transaction_name'] ?? '') ?>">
+                </div>
+
+                <div class="form-group">
                     <label for="direction">Calculation Direction</label>
                     <select id="direction" name="direction" onchange="updateLabels()" required>
                         <option value="foreign_to_mwk" <?= (($_POST['direction'] ?? 'foreign_to_mwk') === 'foreign_to_mwk') ? 'selected' : '' ?>>
@@ -198,6 +229,44 @@ if (isset($_POST['amount']) && $_POST['amount'] !== '') {
                     <?php endif; ?>
                 </div>
                 <div class="rate-info">Rate: 1 <?= $result['currency'] ?> = <?= number_format($result['rate']) ?> MWK</div>
+                
+                <?php 
+                // Show rate comparison if direction is foreign_to_mwk and comparison rates are set
+                if ($result['direction'] === 'foreign_to_mwk'):
+                    $currency = $result['currency'];
+                    $amount = $result['amount'];
+                    $bank_rate = max(0, floatval($data['bank_rates'][$currency] ?? 0));
+                    $talkremit_rate = max(0, floatval($data['talkremit_rates'][$currency] ?? 0));
+                    $show_comparison = ($bank_rate > 0 || $talkremit_rate > 0);
+                    
+                    if ($show_comparison):
+                ?>
+                <div class="rate-comparison">
+                    <h4>Rate Comparison</h4>
+                    <p style="font-size: 0.85rem; margin-bottom: 12px;">See how much you would get with different services:</p>
+                    <div class="comparison-list">
+                        <div class="comparison-item our-rate">
+                            <span class="service-name">Our Rate</span>
+                            <span class="comparison-amount">MWK <?= number_format($amount * $result['rate'], 2) ?></span>
+                        </div>
+                        <?php if ($bank_rate > 0): ?>
+                        <div class="comparison-item">
+                            <span class="service-name">Bank Rate</span>
+                            <span class="comparison-amount">MWK <?= number_format($amount * $bank_rate, 2) ?></span>
+                        </div>
+                        <?php endif; ?>
+                        <?php if ($talkremit_rate > 0): ?>
+                        <div class="comparison-item">
+                            <span class="service-name">TalkRemit</span>
+                            <span class="comparison-amount">MWK <?= number_format($amount * $talkremit_rate, 2) ?></span>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php 
+                    endif;
+                endif; 
+                ?>
             </div>
             <?php endif; ?>
         </div>

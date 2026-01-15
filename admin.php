@@ -42,6 +42,16 @@ if (!file_exists($dataFile)) {
             'USD' => 4300,
             'EUR' => 4600
         ],
+        'bank_rates' => [
+            'GBP' => 0,
+            'USD' => 0,
+            'EUR' => 0
+        ],
+        'talkremit_rates' => [
+            'GBP' => 0,
+            'USD' => 0,
+            'EUR' => 0
+        ],
         'transactions' => [],
         'total_profit' => 0
     ];
@@ -49,6 +59,14 @@ if (!file_exists($dataFile)) {
 }
 
 $data = json_decode(file_get_contents($dataFile), true);
+
+// Ensure backwards compatibility - add new rate fields if they don't exist
+if (!isset($data['bank_rates'])) {
+    $data['bank_rates'] = ['GBP' => 0, 'USD' => 0, 'EUR' => 0];
+}
+if (!isset($data['talkremit_rates'])) {
+    $data['talkremit_rates'] = ['GBP' => 0, 'USD' => 0, 'EUR' => 0];
+}
 
 // Handle rate updates
 if (isset($_SESSION['admin']) && isset($_POST['update_rates'])) {
@@ -64,10 +82,23 @@ if (isset($_SESSION['admin']) && isset($_POST['update_rates'])) {
     $customer_eur = floatval($_POST['customer_eur']);
     $customer_gbp = floatval($_POST['customer_gbp']);
     
+    // Bank rates (optional - 0 means not set)
+    $bank_usd = floatval($_POST['bank_usd'] ?? 0);
+    $bank_eur = floatval($_POST['bank_eur'] ?? 0);
+    $bank_gbp = floatval($_POST['bank_gbp'] ?? 0);
+    
+    // TalkRemit rates (optional - 0 means not set)
+    $talkremit_usd = floatval($_POST['talkremit_usd'] ?? 0);
+    $talkremit_eur = floatval($_POST['talkremit_eur'] ?? 0);
+    $talkremit_gbp = floatval($_POST['talkremit_gbp'] ?? 0);
+    
     // Validate that all rates are positive to prevent division by zero and invalid configurations
     if ($eur_to_usd <= 0 || $gbp_to_usd <= 0 || $usd_selling_rate <= 0 || 
         $customer_usd <= 0 || $customer_eur <= 0 || $customer_gbp <= 0) {
         $error = 'All rates must be greater than zero!';
+    } elseif ($bank_usd < 0 || $bank_eur < 0 || $bank_gbp < 0 || 
+              $talkremit_usd < 0 || $talkremit_eur < 0 || $talkremit_gbp < 0) {
+        $error = 'Bank and TalkRemit rates cannot be negative!';
     } else {
         // Auto-calculate other selling rates based on USD rate
         $data['admin_selling_rates']['USD'] = $usd_selling_rate;
@@ -78,6 +109,16 @@ if (isset($_SESSION['admin']) && isset($_POST['update_rates'])) {
         $data['customer_rates']['USD'] = $customer_usd;
         $data['customer_rates']['EUR'] = $customer_eur;
         $data['customer_rates']['GBP'] = $customer_gbp;
+        
+        // Bank rates (optional)
+        $data['bank_rates']['USD'] = $bank_usd;
+        $data['bank_rates']['EUR'] = $bank_eur;
+        $data['bank_rates']['GBP'] = $bank_gbp;
+        
+        // TalkRemit rates (optional)
+        $data['talkremit_rates']['USD'] = $talkremit_usd;
+        $data['talkremit_rates']['EUR'] = $talkremit_eur;
+        $data['talkremit_rates']['GBP'] = $talkremit_gbp;
         
         // Store market conversion rates for calculations
         $data['market_rates']['EUR_to_USD'] = $eur_to_usd;
@@ -241,6 +282,52 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
                     </div>
                 </div>
 
+                <!-- Bank Rates (Optional) -->
+                <div class="rate-section">
+                    <h4>🏦 Bank Rates (Optional - for comparison)</h4>
+                    <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">Set to 0 to hide from customer view. When set, customers can compare your rates with bank rates.</p>
+                    <div class="rate-grid">
+                        <div class="rate-input-group">
+                            <label>1 GBP = ? MWK (Bank rate)</label>
+                            <input type="number" name="bank_gbp" step="0.01" 
+                                   value="<?= $data['bank_rates']['GBP'] ?? 0 ?>" min="0">
+                        </div>
+                        <div class="rate-input-group">
+                            <label>1 USD = ? MWK (Bank rate)</label>
+                            <input type="number" name="bank_usd" step="0.01" 
+                                   value="<?= $data['bank_rates']['USD'] ?? 0 ?>" min="0">
+                        </div>
+                        <div class="rate-input-group">
+                            <label>1 EUR = ? MWK (Bank rate)</label>
+                            <input type="number" name="bank_eur" step="0.01" 
+                                   value="<?= $data['bank_rates']['EUR'] ?? 0 ?>" min="0">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TalkRemit Rates (Optional) -->
+                <div class="rate-section">
+                    <h4>📲 TalkRemit Rates (Optional - for comparison)</h4>
+                    <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">Set to 0 to hide from customer view. When set, customers can compare your rates with TalkRemit app rates.</p>
+                    <div class="rate-grid">
+                        <div class="rate-input-group">
+                            <label>1 GBP = ? MWK (TalkRemit rate)</label>
+                            <input type="number" name="talkremit_gbp" step="0.01" 
+                                   value="<?= $data['talkremit_rates']['GBP'] ?? 0 ?>" min="0">
+                        </div>
+                        <div class="rate-input-group">
+                            <label>1 USD = ? MWK (TalkRemit rate)</label>
+                            <input type="number" name="talkremit_usd" step="0.01" 
+                                   value="<?= $data['talkremit_rates']['USD'] ?? 0 ?>" min="0">
+                        </div>
+                        <div class="rate-input-group">
+                            <label>1 EUR = ? MWK (TalkRemit rate)</label>
+                            <input type="number" name="talkremit_eur" step="0.01" 
+                                   value="<?= $data['talkremit_rates']['EUR'] ?? 0 ?>" min="0">
+                        </div>
+                    </div>
+                </div>
+
                 <button type="submit" name="update_rates" class="convert-btn">Update All Rates</button>
             </form>
         </div>
@@ -317,6 +404,11 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
                     <div class="transaction-item">
                         <div class="transaction-header">
                             <div class="transaction-amount">
+                                <?php if (!empty($transaction['name'])): ?>
+                                    <div style="font-weight: 600; color: #2c3e50; margin-bottom: 4px;">
+                                        <?= htmlspecialchars($transaction['name']) ?>
+                                    </div>
+                                <?php endif; ?>
                                 <?= $transaction['currency'] ?> <?= number_format($transaction['amount'], 2) ?> 
                                 → MWK <?= number_format($transaction['mwk_given_to_customer'], 2) ?>
                             </div>
