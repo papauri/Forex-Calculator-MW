@@ -1,0 +1,42 @@
+{
+    "rates": {
+        "GBP": 5200,
+        "USD": 4000,
+        "EUR": 4200
+    },
+    "real_rates": {
+        "GBP": {
+            "rate": 1.26,
+            "base": "USD"
+        },
+        "USD": {
+            "rate": 1,
+            "base": "USD"
+        },
+        "EUR": {
+            "rate": 1.17461,
+            "base": "USD"
+        }
+    },
+    "usd_to_mwk": 4000,
+    "transactions": [],
+    "total_profit": 0,
+    "customer_rates": {
+        "GBP": 4800,
+        "USD": 3650,
+        "EUR": 4200
+    },
+    "market_rates": {
+        "EUR_to_GBP": 0.8632,
+        "EUR_to_USD": 1.173,
+        "GBP_to_USD": 1.335,
+        "GBP_to_EUR": 1.1496,
+        "USD_to_EUR": 0.88,
+        "USD_to_GBP": 0.76
+    },
+    "admin_selling_rates": {
+        "GBP": 5555,
+        "USD": 4000,
+        "EUR": 4600
+    }
+}

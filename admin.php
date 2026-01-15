@@ -1,41 +1,81 @@
 <?php
 session_start();
 
-// Simple admin authentication
-if ($_POST['login'] ?? false) {
-    if ($_POST['password'] === 'admin123') {
+// Handle login
+if (isset($_POST['login'])) {
+    $password = trim($_POST['password']);
+    if ($password === 'admin123') {
         $_SESSION['admin'] = true;
+        header('Location: admin.php');
+        exit;
     } else {
         $error = 'Invalid password';
     }
 }
 
-if ($_POST['logout'] ?? false) {
-    unset($_SESSION['admin']);
+// Handle logout
+if (isset($_POST['logout'])) {
+    session_destroy();
+    header('Location: admin.php');
+    exit;
 }
 
 // Load data
 $dataFile = 'data.json';
+if (!file_exists($dataFile)) {
+    $defaultData = [
+        'customer_rates' => [
+            'GBP' => 5200,
+            'USD' => 4000,
+            'EUR' => 4200
+        ],
+        'market_rates' => [
+            'EUR_to_GBP' => 1.14,
+            'EUR_to_USD' => 1.1738,
+            'GBP_to_USD' => 1.28,
+            'GBP_to_EUR' => 0.877,
+            'USD_to_EUR' => 0.852,
+            'USD_to_GBP' => 0.781
+        ],
+        'admin_selling_rates' => [
+            'GBP' => 5500,
+            'USD' => 4300,
+            'EUR' => 4600
+        ],
+        'transactions' => [],
+        'total_profit' => 0
+    ];
+    file_put_contents($dataFile, json_encode($defaultData, JSON_PRETTY_PRINT));
+}
+
 $data = json_decode(file_get_contents($dataFile), true);
 
 // Handle rate updates
-if (($_SESSION['admin'] ?? false) && ($_POST['update_rates'] ?? false)) {
-    $data['rates']['GBP'] = floatval($_POST['gbp_rate']);
-    $data['rates']['USD'] = floatval($_POST['usd_rate']);
-    $data['rates']['EUR'] = floatval($_POST['eur_rate']);
+if (isset($_SESSION['admin']) && isset($_POST['update_rates'])) {
+    // Customer rates
+    $data['customer_rates']['GBP'] = floatval($_POST['customer_gbp']);
+    $data['customer_rates']['USD'] = floatval($_POST['customer_usd']);
+    $data['customer_rates']['EUR'] = floatval($_POST['customer_eur']);
     
-    // Update real rates
-    $data['real_rates']['GBP']['rate'] = floatval($_POST['gbp_real_rate']);
-    $data['real_rates']['USD']['rate'] = floatval($_POST['usd_real_rate']);
-    $data['real_rates']['EUR']['rate'] = floatval($_POST['eur_real_rate']);
-    $data['usd_to_mwk'] = floatval($_POST['usd_to_mwk']);
+    // Market conversion rates
+    $data['market_rates']['EUR_to_GBP'] = floatval($_POST['eur_to_gbp']);
+    $data['market_rates']['EUR_to_USD'] = floatval($_POST['eur_to_usd']);
+    $data['market_rates']['GBP_to_USD'] = floatval($_POST['gbp_to_usd']);
+    $data['market_rates']['GBP_to_EUR'] = floatval($_POST['gbp_to_eur']);
+    $data['market_rates']['USD_to_EUR'] = floatval($_POST['usd_to_eur']);
+    $data['market_rates']['USD_to_GBP'] = floatval($_POST['usd_to_gbp']);
+    
+    // Admin selling rates
+    $data['admin_selling_rates']['GBP'] = floatval($_POST['admin_gbp']);
+    $data['admin_selling_rates']['USD'] = floatval($_POST['admin_usd']);
+    $data['admin_selling_rates']['EUR'] = floatval($_POST['admin_eur']);
     
     file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT));
-    $success = 'Rates updated successfully!';
+    $success = 'All rates updated successfully!';
 }
 
 // Clear transactions
-if (($_SESSION['admin'] ?? false) && ($_POST['clear_transactions'] ?? false)) {
+if (isset($_SESSION['admin']) && isset($_POST['clear_transactions'])) {
     $data['transactions'] = [];
     $data['total_profit'] = 0;
     file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT));
@@ -47,125 +87,225 @@ if (($_SESSION['admin'] ?? false) && ($_POST['clear_transactions'] ?? false)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Forex Calculator</title>
+    <title>Admin Dashboard</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <?php if (!($_SESSION['admin'] ?? false)): ?>
+        <?php if (!isset($_SESSION['admin'])): ?>
         <!-- Login Form -->
         <div class="admin-login">
-            <h1>🔐 Admin Login</h1>
+            <h1>Admin Login</h1>
             <?php if (isset($error)): ?>
-                <div class="error"><?= $error ?></div>
+                <div class="error"><?= htmlspecialchars($error) ?></div>
             <?php endif; ?>
             <form method="POST">
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required>
+                    <input type="password" id="password" name="password" placeholder="Enter admin password" required>
                 </div>
-                <button type="submit" name="login" class="convert-btn">Login</button>
+                <button type="submit" name="login" class="convert-btn">LOGIN</button>
             </form>
-            <p><a href="index.php">← Back to Calculator</a></p>
+            <div class="back-link">
+                <a href="index.php">← Back to Calculator</a>
+            </div>
         </div>
         <?php else: ?>
         
         <!-- Admin Dashboard -->
         <header>
-            <h1>🔧 Admin Dashboard</h1>
-            <form method="POST" style="display: inline;">
+            <h1>Admin Dashboard</h1>
+            <form method="POST" class="logout-form">
                 <button type="submit" name="logout" class="logout-btn">Logout</button>
             </form>
         </header>
 
         <?php if (isset($success)): ?>
-            <div class="success"><?= $success ?></div>
+            <div class="success"><?= htmlspecialchars($success) ?></div>
         <?php endif; ?>
 
         <!-- Profit Summary -->
         <div class="profit-summary">
-            <h2>💰 Profit Summary</h2>
-            <div class="profit-amount">
-                Total Profit: <strong>MWK <?= number_format($data['total_profit'], 2) ?></strong>
-            </div>
-            <p>Total Transactions: <?= count($data['transactions']) ?></p>
+            <h2>Total Profit</h2>
+            <div class="profit-amount">MWK <?= number_format($data['total_profit'], 2) ?></div>
+            <div class="transaction-count"><?= count($data['transactions']) ?> transactions</div>
         </div>
 
         <!-- Rate Management -->
         <div class="admin-section">
-            <h3>📊 Manage Exchange Rates</h3>
+            <h3>Exchange Rate Management</h3>
             <form method="POST" class="rates-form">
-                <div class="rates-grid-admin">
-                    <div class="rate-group">
-                        <h4>British Pound (GBP)</h4>
-                        <label>Customer Rate (1 GBP = ? MWK)</label>
-                        <input type="number" name="gbp_rate" step="0.01" 
-                               value="<?= $data['rates']['GBP'] ?>" required>
-                        <label>Real Rate (1 GBP = ? USD)</label>
-                        <input type="number" name="gbp_real_rate" step="0.00001" 
-                               value="<?= $data['real_rates']['GBP']['rate'] ?>" required>
-                    </div>
-
-                    <div class="rate-group">
-                        <h4>US Dollar (USD)</h4>
-                        <label>Customer Rate (1 USD = ? MWK)</label>
-                        <input type="number" name="usd_rate" step="0.01" 
-                               value="<?= $data['rates']['USD'] ?>" required>
-                        <label>Real Rate (Always 1)</label>
-                        <input type="number" name="usd_real_rate" step="0.00001" 
-                               value="1" readonly>
-                    </div>
-
-                    <div class="rate-group">
-                        <h4>Euro (EUR)</h4>
-                        <label>Customer Rate (1 EUR = ? MWK)</label>
-                        <input type="number" name="eur_rate" step="0.01" 
-                               value="<?= $data['rates']['EUR'] ?>" required>
-                        <label>Real Rate (1 EUR = ? USD)</label>
-                        <input type="number" name="eur_real_rate" step="0.00001" 
-                               value="<?= $data['real_rates']['EUR']['rate'] ?>" required>
-                    </div>
-
-                    <div class="rate-group">
-                        <h4>USD to MWK</h4>
-                        <label>Real Market Rate (1 USD = ? MWK)</label>
-                        <input type="number" name="usd_to_mwk" step="0.01" 
-                               value="<?= $data['usd_to_mwk'] ?>" required>
+                
+                <!-- Customer Rates -->
+                <div class="rate-section">
+                    <h4>📱 Customer Rates (What customers get)</h4>
+                    <div class="rate-grid">
+                        <div class="rate-input-group">
+                            <label>1 GBP = ? MWK</label>
+                            <input type="number" name="customer_gbp" step="0.01" 
+                                   value="<?= $data['customer_rates']['GBP'] ?>" required>
+                        </div>
+                        <div class="rate-input-group">
+                            <label>1 USD = ? MWK</label>
+                            <input type="number" name="customer_usd" step="0.01" 
+                                   value="<?= $data['customer_rates']['USD'] ?>" required>
+                        </div>
+                        <div class="rate-input-group">
+                            <label>1 EUR = ? MWK</label>
+                            <input type="number" name="customer_eur" step="0.01" 
+                                   value="<?= $data['customer_rates']['EUR'] ?>" required>
+                        </div>
                     </div>
                 </div>
-                <button type="submit" name="update_rates" class="convert-btn">Update Rates</button>
+
+                <!-- Market Conversion Rates -->
+                <div class="rate-section">
+                    <h4>🌍 Market Conversion Rates</h4>
+                    <div class="rate-grid">
+                        <div class="rate-input-group">
+                            <label>1 EUR = ? GBP</label>
+                            <input type="number" name="eur_to_gbp" step="0.00001" 
+                                   value="<?= $data['market_rates']['EUR_to_GBP'] ?>" required>
+                        </div>
+                        <div class="rate-input-group">
+                            <label>1 EUR = ? USD</label>
+                            <input type="number" name="eur_to_usd" step="0.00001" 
+                                   value="<?= $data['market_rates']['EUR_to_USD'] ?>" required>
+                        </div>
+                        <div class="rate-input-group">
+                            <label>1 GBP = ? USD</label>
+                            <input type="number" name="gbp_to_usd" step="0.00001" 
+                                   value="<?= $data['market_rates']['GBP_to_USD'] ?>" required>
+                        </div>
+                        <div class="rate-input-group">
+                            <label>1 GBP = ? EUR</label>
+                            <input type="number" name="gbp_to_eur" step="0.00001" 
+                                   value="<?= $data['market_rates']['GBP_to_EUR'] ?>" required>
+                        </div>
+                        <div class="rate-input-group">
+                            <label>1 USD = ? EUR</label>
+                            <input type="number" name="usd_to_eur" step="0.00001" 
+                                   value="<?= $data['market_rates']['USD_to_EUR'] ?>" required>
+                        </div>
+                        <div class="rate-input-group">
+                            <label>1 USD = ? GBP</label>
+                            <input type="number" name="usd_to_gbp" step="0.00001" 
+                                   value="<?= $data['market_rates']['USD_to_GBP'] ?>" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Selling Rates -->
+                <div class="rate-section">
+                    <h4>💰 Your Selling Rates (What you can sell for)</h4>
+                    <div class="rate-grid">
+                        <div class="rate-input-group">
+                            <label>1 GBP = ? MWK (your rate)</label>
+                            <input type="number" name="admin_gbp" step="0.01" 
+                                   value="<?= $data['admin_selling_rates']['GBP'] ?>" required>
+                        </div>
+                        <div class="rate-input-group">
+                            <label>1 USD = ? MWK (your rate)</label>
+                            <input type="number" name="admin_usd" step="0.01" 
+                                   value="<?= $data['admin_selling_rates']['USD'] ?>" required>
+                        </div>
+                        <div class="rate-input-group">
+                            <label>1 EUR = ? MWK (your rate)</label>
+                            <input type="number" name="admin_eur" step="0.01" 
+                                   value="<?= $data['admin_selling_rates']['EUR'] ?>" required>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" name="update_rates" class="convert-btn">Update All Rates</button>
             </form>
+        </div>
+
+        <!-- Profit Preview -->
+        <div class="admin-section">
+            <h3>💡 Profit Preview (per 1000 units)</h3>
+            <div class="profit-preview-grid">
+                <?php foreach (['GBP', 'USD', 'EUR'] as $currency): ?>
+                <div class="profit-preview-card">
+                    <h4>1000 <?= $currency ?></h4>
+                    <div class="preview-details">
+                        <?php
+                        $amount = 1000;
+                        $customer_gets = $amount * $data['customer_rates'][$currency];
+                        
+                        // Direct sale profit
+                        $direct_profit = ($amount * $data['admin_selling_rates'][$currency]) - $customer_gets;
+                        
+                        echo "<div class='profit-option'>";
+                        echo "<span>Direct sale:</span>";
+                        echo "<span class='profit-amount'>+" . number_format($direct_profit, 0) . " MWK</span>";
+                        echo "</div>";
+                        
+                        // Conversion profits
+                        foreach ($data['market_rates'] as $rate_key => $rate_value) {
+                            $from_curr = substr($rate_key, 0, 3);
+                            $to_curr = substr($rate_key, -3);
+                            
+                            if ($from_curr === $currency) {
+                                $converted_amount = $amount * $rate_value;
+                                $conversion_profit = ($converted_amount * $data['admin_selling_rates'][$to_curr]) - $customer_gets;
+                                
+                                echo "<div class='profit-option'>";
+                                echo "<span>Via $to_curr:</span>";
+                                echo "<span class='profit-amount'>+" . number_format($conversion_profit, 0) . " MWK</span>";
+                                echo "</div>";
+                            }
+                        }
+                        ?>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
         </div>
 
         <!-- Transaction History -->
         <div class="admin-section">
-            <h3>📋 Recent Transactions</h3>
+            <div class="section-header">
+                <h3>📋 Recent Transactions</h3>
+                <?php if (!empty($data['transactions'])): ?>
+                <form method="POST" style="display: inline;">
+                    <button type="submit" name="clear_transactions" 
+                            class="danger-btn" 
+                            onclick="return confirm('Clear all transactions?')">
+                        Clear All
+                    </button>
+                </form>
+                <?php endif; ?>
+            </div>
+            
             <?php if (empty($data['transactions'])): ?>
-                <p>No transactions yet.</p>
+                <div class="no-transactions">No transactions yet.</div>
             <?php else: ?>
-                <div class="transaction-controls">
-                    <form method="POST" style="display: inline;">
-                        <button type="submit" name="clear_transactions" 
-                                class="danger-btn" 
-                                onclick="return confirm('Are you sure you want to clear all transactions?')">
-                            Clear All Transactions
-                        </button>
-                    </form>
-                </div>
                 <div class="transactions-list">
-                    <?php foreach (array_reverse(array_slice($data['transactions'], -10)) as $transaction): ?>
+                    <?php foreach (array_reverse(array_slice($data['transactions'], -5)) as $transaction): ?>
                     <div class="transaction-item">
                         <div class="transaction-header">
-                            <span class="transaction-date"><?= $transaction['date'] ?></span>
-                            <span class="transaction-profit profit-positive">
-                                +MWK <?= number_format($transaction['profit'], 2) ?>
-                            </span>
+                            <div class="transaction-amount">
+                                <?= $transaction['currency'] ?> <?= number_format($transaction['amount'], 2) ?> 
+                                → MWK <?= number_format($transaction['mwk_given_to_customer'], 2) ?>
+                            </div>
+                            <div class="transaction-profit positive">
+                                +<?= number_format($transaction['best_profit'], 2) ?> MWK
+                            </div>
                         </div>
                         <div class="transaction-details">
-                            <p><strong><?= $transaction['currency'] ?> <?= number_format($transaction['amount'], 2) ?></strong> 
-                               → MWK <?= number_format($transaction['mwk_given'], 2) ?></p>
-                            <p class="small">Real Value: MWK <?= number_format($transaction['real_mwk_value'], 2) ?> 
-                               | Rate Used: <?= number_format($transaction['rate_charged']) ?></p>
+                            <div class="transaction-date"><?= $transaction['date'] ?></div>
+                            <div class="transaction-strategy">Best: <?= ucfirst(str_replace('_', ' ', $transaction['best_strategy'])) ?></div>
+                        </div>
+                        
+                        <!-- Show all profit options -->
+                        <div class="profit-breakdown">
+                            <?php foreach ($transaction['all_options'] as $option_key => $option): ?>
+                            <div class="profit-option <?= $option_key === $transaction['best_strategy'] ? 'best-option' : '' ?>">
+                                <span class="option-desc"><?= $option['description'] ?></span>
+                                <span class="option-profit">+<?= number_format($option['profit'], 2) ?> MWK</span>
+                            </div>
+                            <?php endforeach; ?>
                         </div>
                     </div>
                     <?php endforeach; ?>
