@@ -435,60 +435,26 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
         <!-- Profit Preview -->
         <div class="admin-section">
             <h3>💡 Profit Preview</h3>
-            <p style="font-size: 0.9rem; color: #666; margin-bottom: 16px;">Calculate profit for any amount. Enter custom amounts or use default 1000 units.</p>
+            <p style="font-size: 0.9rem; color: #666; margin-bottom: 16px;">Calculate profit for any amount. Enter an amount in one currency to see conversions and profit breakdown.</p>
             
             <div class="profit-preview-controls">
                 <div class="profit-input-group">
                     <label for="profit_gbp_amount">GBP Amount:</label>
-                    <input type="number" id="profit_gbp_amount" value="1000" min="0" step="0.01">
+                    <input type="number" id="profit_gbp_amount" value="0" min="0" step="0.01">
                 </div>
                 <div class="profit-input-group">
                     <label for="profit_usd_amount">USD Amount:</label>
-                    <input type="number" id="profit_usd_amount" value="1000" min="0" step="0.01">
+                    <input type="number" id="profit_usd_amount" value="0" min="0" step="0.01">
                 </div>
                 <div class="profit-input-group">
                     <label for="profit_eur_amount">EUR Amount:</label>
-                    <input type="number" id="profit_eur_amount" value="1000" min="0" step="0.01">
+                    <input type="number" id="profit_eur_amount" value="0" min="0" step="0.01">
                 </div>
                 <button onclick="updateProfitPreview()" class="calculate-btn" style="margin-top: 20px;">Calculate Profit</button>
             </div>
             
-            <div class="profit-preview-grid" id="profit-preview-results">
-                <?php foreach (['GBP', 'USD', 'EUR'] as $currency): ?>
-                <div class="profit-preview-card" id="preview-<?= strtolower($currency) ?>">
-                    <h4><span class="preview-amount">1000</span> <?= $currency ?></h4>
-                    <div class="preview-details">
-                        <?php
-                        $amount = 1000;
-                        $customer_gets = $amount * $data['customer_rates'][$currency];
-                        
-                        // Direct sale profit
-                        $direct_profit = ($amount * $data['admin_selling_rates'][$currency]) - $customer_gets;
-                        
-                        echo "<div class='profit-option'>";
-                        echo "<span>Direct sale:</span>";
-                        echo "<span class='profit-amount'>+" . number_format($direct_profit, 0) . " MWK</span>";
-                        echo "</div>";
-                        
-                        // Conversion profits
-                        foreach ($data['market_rates'] as $rate_key => $rate_value) {
-                            $from_curr = substr($rate_key, 0, 3);
-                            $to_curr = substr($rate_key, -3);
-                            
-                            if ($from_curr === $currency) {
-                                $converted_amount = $amount * $rate_value;
-                                $conversion_profit = ($converted_amount * $data['admin_selling_rates'][$to_curr]) - $customer_gets;
-                                
-                                echo "<div class='profit-option'>";
-                                echo "<span>Via $to_curr:</span>";
-                                echo "<span class='profit-amount'>+" . number_format($conversion_profit, 0) . " MWK</span>";
-                                echo "</div>";
-                            }
-                        }
-                        ?>
-                    </div>
-                </div>
-                <?php endforeach; ?>
+            <div id="profit-preview-results" style="margin-top: 20px;">
+                <!-- Results will be dynamically inserted here -->
             </div>
         </div>
 
@@ -624,6 +590,32 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
         adminUSD.addEventListener('input', function() {
             autoPopulateAdminRates();
         });
+        
+        // Profit preview - clear other fields when one is entered
+        const profitGBP = document.getElementById('profit_gbp_amount');
+        const profitUSD = document.getElementById('profit_usd_amount');
+        const profitEUR = document.getElementById('profit_eur_amount');
+        
+        profitGBP.addEventListener('input', function() {
+            if (this.value) {
+                profitUSD.value = 0;
+                profitEUR.value = 0;
+            }
+        });
+        
+        profitUSD.addEventListener('input', function() {
+            if (this.value) {
+                profitGBP.value = 0;
+                profitEUR.value = 0;
+            }
+        });
+        
+        profitEUR.addEventListener('input', function() {
+            if (this.value) {
+                profitGBP.value = 0;
+                profitUSD.value = 0;
+            }
+        });
     });
     
     // Profit Preview Calculator
@@ -632,11 +624,26 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
         const usdAmount = parseFloat(document.getElementById('profit_usd_amount').value) || 0;
         const eurAmount = parseFloat(document.getElementById('profit_eur_amount').value) || 0;
         
-        const amounts = {
-            'gbp': gbpAmount,
-            'usd': usdAmount,
-            'eur': eurAmount
-        };
+        const resultsDiv = document.getElementById('profit-preview-results');
+        
+        // Check if at least one amount is entered
+        if (gbpAmount <= 0 && usdAmount <= 0 && eurAmount <= 0) {
+            resultsDiv.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Please enter an amount in at least one currency field.</p>';
+            return;
+        }
+        
+        // Determine which currency was entered (use the first non-zero one)
+        let inputCurrency, inputAmount;
+        if (gbpAmount > 0) {
+            inputCurrency = 'GBP';
+            inputAmount = gbpAmount;
+        } else if (usdAmount > 0) {
+            inputCurrency = 'USD';
+            inputAmount = usdAmount;
+        } else {
+            inputCurrency = 'EUR';
+            inputAmount = eurAmount;
+        }
         
         const customerRates = {
             'GBP': <?= $data['customer_rates']['GBP'] ?>,
@@ -659,45 +666,96 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
             USD_to_GBP: <?= $data['market_rates']['USD_to_GBP'] ?>
         };
         
-        // Update each currency card
-        ['GBP', 'USD', 'EUR'].forEach(currency => {
-            const currencyKey = currency.toLowerCase();
-            const amount = amounts[currencyKey];
-            const card = document.getElementById('preview-' + currencyKey);
-            
-            if (amount > 0) {
-                // Update the amount display
-                card.querySelector('.preview-amount').textContent = amount.toFixed(2);
+        // Calculate conversions to other currencies
+        const conversions = {};
+        conversions[inputCurrency] = inputAmount;
+        
+        if (inputCurrency === 'GBP') {
+            conversions['USD'] = inputAmount * marketRates.GBP_to_USD;
+            conversions['EUR'] = inputAmount * marketRates.GBP_to_EUR;
+        } else if (inputCurrency === 'USD') {
+            conversions['GBP'] = inputAmount * marketRates.USD_to_GBP;
+            conversions['EUR'] = inputAmount * marketRates.USD_to_EUR;
+        } else if (inputCurrency === 'EUR') {
+            conversions['GBP'] = inputAmount * marketRates.EUR_to_GBP;
+            conversions['USD'] = inputAmount * marketRates.EUR_to_USD;
+        }
+        
+        // Calculate MWK value (what customer gets)
+        const mwkGiven = inputAmount * customerRates[inputCurrency];
+        
+        // Calculate profits for each currency representation
+        const profits = {};
+        ['GBP', 'USD', 'EUR'].forEach(curr => {
+            const currAmount = conversions[curr];
+            const sellForMWK = currAmount * adminRates[curr];
+            profits[curr] = sellForMWK - mwkGiven;
+        });
+        profits['MWK'] = mwkGiven; // Customer gets this in MWK
+        
+        // Build the result HTML
+        let html = `
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #007bff;">
+                <h4 style="margin-top: 0; color: #007bff;">💰 Profit Analysis for ${inputAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${inputCurrency}</h4>
                 
-                const customerGets = amount * customerRates[currency];
+                <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                    <h5 style="margin-top: 0; color: #495057;">📊 Currency Conversions</h5>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                        <div style="padding: 10px; background: #e7f3ff; border-radius: 4px;">
+                            <strong style="color: #0056b3;">GBP:</strong> ${conversions['GBP'].toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        </div>
+                        <div style="padding: 10px; background: #e7f3ff; border-radius: 4px;">
+                            <strong style="color: #0056b3;">USD:</strong> ${conversions['USD'].toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        </div>
+                        <div style="padding: 10px; background: #e7f3ff; border-radius: 4px;">
+                            <strong style="color: #0056b3;">EUR:</strong> ${conversions['EUR'].toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        </div>
+                        <div style="padding: 10px; background: #fff3cd; border-radius: 4px;">
+                            <strong style="color: #856404;">MWK (Customer Gets):</strong> ${mwkGiven.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        </div>
+                    </div>
+                </div>
                 
-                // Calculate direct profit
-                const directProfit = (amount * adminRates[currency]) - customerGets;
-                
-                let html = `<div class='profit-option'>
-                    <span>Direct sale:</span>
-                    <span class='profit-amount'>+${directProfit.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} MWK</span>
-                </div>`;
-                
-                // Calculate conversion profits
-                Object.keys(marketRates).forEach(rateKey => {
-                    const fromCurr = rateKey.substring(0, 3);
-                    const toCurr = rateKey.substring(rateKey.length - 3);
-                    
-                    if (fromCurr === currency) {
-                        const convertedAmount = amount * marketRates[rateKey];
-                        const conversionProfit = (convertedAmount * adminRates[toCurr]) - customerGets;
-                        
-                        html += `<div class='profit-option'>
-                            <span>Via ${toCurr}:</span>
-                            <span class='profit-amount'>+${conversionProfit.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} MWK</span>
-                        </div>`;
-                    }
-                });
-                
-                card.querySelector('.preview-details').innerHTML = html;
+                <div style="background: white; padding: 15px; border-radius: 6px;">
+                    <h5 style="margin-top: 0; color: #495057;">💵 Profit Breakdown (if you sell as different currencies)</h5>
+                    <div style="display: grid; gap: 10px;">
+        `;
+        
+        // Add profit for each currency
+        ['GBP', 'USD', 'EUR', 'MWK'].forEach(curr => {
+            if (curr === 'MWK') {
+                // MWK is what customer gets, so "profit" is 0 but show what they received
+                html += `
+                    <div style="padding: 12px; background: #f8f9fa; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+                        <span><strong>As MWK (Direct):</strong> Give customer MWK directly</span>
+                        <span style="color: #666; font-size: 0.9em;">Customer gets: ${mwkGiven.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} MWK</span>
+                    </div>
+                `;
+            } else {
+                const profitColor = profits[curr] >= 0 ? '#28a745' : '#dc3545';
+                const profitSign = profits[curr] >= 0 ? '+' : '';
+                html += `
+                    <div style="padding: 12px; background: ${profits[curr] >= 0 ? '#d4edda' : '#f8d7da'}; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border-left: 3px solid ${profitColor};">
+                        <span><strong>Sell as ${curr}:</strong> ${conversions[curr].toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${curr} × ${adminRates[curr].toLocaleString('en-US')} MWK</span>
+                        <span style="color: ${profitColor}; font-weight: bold; font-size: 1.1em;">${profitSign}${profits[curr].toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} MWK</span>
+                    </div>
+                `;
             }
         });
+        
+        // Find best profit option
+        const bestCurr = Object.keys(profits).filter(c => c !== 'MWK').reduce((a, b) => profits[a] > profits[b] ? a : b);
+        
+        html += `
+                    </div>
+                    <div style="margin-top: 15px; padding: 12px; background: #d1ecf1; border-radius: 4px; border-left: 4px solid #17a2b8;">
+                        <strong style="color: #0c5460;">💡 Best Strategy:</strong> Sell as ${bestCurr} for maximum profit of <strong>${profits[bestCurr].toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} MWK</strong>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        resultsDiv.innerHTML = html;
     }
     <?php endif; ?>
     </script>
