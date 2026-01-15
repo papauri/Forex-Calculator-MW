@@ -30,12 +30,12 @@ if (!file_exists($dataFile)) {
             'EUR' => 4200
         ],
         'market_rates' => [
-            'EUR_to_GBP' => 1.14,
-            'EUR_to_USD' => 1.1738,
-            'GBP_to_USD' => 1.28,
-            'GBP_to_EUR' => 0.877,
-            'USD_to_EUR' => 0.852,
-            'USD_to_GBP' => 0.781
+            'EUR_to_GBP' => 0.877,     // 1 EUR = 0.877 GBP (inverse of GBP_to_EUR)
+            'EUR_to_USD' => 1.1738,    // 1 EUR = 1.1738 USD
+            'GBP_to_USD' => 1.28,      // 1 GBP = 1.28 USD
+            'GBP_to_EUR' => 1.14,      // 1 GBP = 1.14 EUR (PRIMARY - was EUR_to_GBP)
+            'USD_to_EUR' => 0.852,     // 1 USD = 0.852 EUR
+            'USD_to_GBP' => 0.781      // 1 USD = 0.781 GBP
         ],
         'admin_selling_rates' => [
             'GBP' => 5500,
@@ -70,13 +70,15 @@ if (!isset($data['talkremit_rates'])) {
 
 // Handle rate updates
 if (isset($_SESSION['admin']) && isset($_POST['update_rates'])) {
-    // Get base USD selling rate (what admin can sell USD for)
-    $usd_selling_rate = floatval($_POST['admin_usd']);
-    
-    // Market conversion rates (how currencies convert to each other)
+    // Market conversion rates (how currencies convert to each other) - NOW USING GBP_to_EUR
     $eur_to_usd = floatval($_POST['eur_to_usd']); // e.g., 1.148
     $gbp_to_usd = floatval($_POST['gbp_to_usd']); // e.g., 1.322
-    $eur_to_gbp = floatval($_POST['eur_to_gbp']); // e.g., 0.877
+    $gbp_to_eur = floatval($_POST['gbp_to_eur']); // e.g., 1.14 (changed from EUR_to_GBP)
+    
+    // Admin selling rates (all can be manually set now)
+    $admin_usd = floatval($_POST['admin_usd']);
+    $admin_eur = floatval($_POST['admin_eur']);
+    $admin_gbp = floatval($_POST['admin_gbp']);
     
     // Customer rates
     $customer_usd = floatval($_POST['customer_usd']);
@@ -94,17 +96,18 @@ if (isset($_SESSION['admin']) && isset($_POST['update_rates'])) {
     $talkremit_gbp = floatval($_POST['talkremit_gbp'] ?? 0);
     
     // Validate that all rates are positive to prevent division by zero and invalid configurations
-    if ($eur_to_usd <= 0 || $gbp_to_usd <= 0 || $eur_to_gbp <= 0 || $usd_selling_rate <= 0 || 
+    if ($eur_to_usd <= 0 || $gbp_to_usd <= 0 || $gbp_to_eur <= 0 || 
+        $admin_usd <= 0 || $admin_eur <= 0 || $admin_gbp <= 0 ||
         $customer_usd <= 0 || $customer_eur <= 0 || $customer_gbp <= 0) {
         $error = 'All rates must be greater than zero!';
     } elseif ($bank_usd < 0 || $bank_eur < 0 || $bank_gbp < 0 || 
               $talkremit_usd < 0 || $talkremit_eur < 0 || $talkremit_gbp < 0) {
         $error = 'Bank and TalkRemit rates cannot be negative!';
     } else {
-        // Auto-calculate other selling rates based on USD rate
-        $data['admin_selling_rates']['USD'] = $usd_selling_rate;
-        $data['admin_selling_rates']['EUR'] = $usd_selling_rate * $eur_to_usd; // e.g., 4000 * 1.148 = 4592
-        $data['admin_selling_rates']['GBP'] = $usd_selling_rate * $gbp_to_usd; // e.g., 4000 * 1.322 = 5288
+        // Admin selling rates (manually editable)
+        $data['admin_selling_rates']['USD'] = $admin_usd;
+        $data['admin_selling_rates']['EUR'] = $admin_eur;
+        $data['admin_selling_rates']['GBP'] = $admin_gbp;
         
         // Customer rates (what customers get - should be lower than selling rates)
         $data['customer_rates']['USD'] = $customer_usd;
@@ -121,16 +124,16 @@ if (isset($_SESSION['admin']) && isset($_POST['update_rates'])) {
         $data['talkremit_rates']['EUR'] = $talkremit_eur;
         $data['talkremit_rates']['GBP'] = $talkremit_gbp;
         
-        // Store market conversion rates for calculations
+        // Store market conversion rates for calculations - NOW USING GBP_to_EUR
         $data['market_rates']['EUR_to_USD'] = $eur_to_usd;
         $data['market_rates']['GBP_to_USD'] = $gbp_to_usd;
-        $data['market_rates']['EUR_to_GBP'] = $eur_to_gbp;
+        $data['market_rates']['GBP_to_EUR'] = $gbp_to_eur;
         $data['market_rates']['USD_to_EUR'] = 1 / $eur_to_usd;
         $data['market_rates']['USD_to_GBP'] = 1 / $gbp_to_usd;
-        $data['market_rates']['GBP_to_EUR'] = 1 / $eur_to_gbp;
+        $data['market_rates']['EUR_to_GBP'] = 1 / $gbp_to_eur;
         
         file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT));
-        $success = 'All rates updated successfully! EUR and GBP selling rates auto-calculated based on USD rate.';
+        $success = 'All rates updated successfully!';
     }
 }
 
@@ -334,22 +337,22 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
                 <!-- Market Conversion Rates -->
                 <div class="rate-section">
                     <h4>🌍 Market Conversion Rates</h4>
-                    <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">Set the current market rates for automatic selling rate calculation and inverse conversions</p>
+                    <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">Set the current market rates. Changing these will auto-update customer rates and other calculations.</p>
                     <div class="rate-grid">
                         <div class="rate-input-group">
                             <label>1 EUR = ? USD</label>
-                            <input type="number" name="eur_to_usd" step="0.00001" 
+                            <input type="number" name="eur_to_usd" id="market_eur_to_usd" step="0.00001" 
                                    value="<?= $data['market_rates']['EUR_to_USD'] ?>" required>
                         </div>
                         <div class="rate-input-group">
                             <label>1 GBP = ? USD</label>
-                            <input type="number" name="gbp_to_usd" step="0.00001" 
+                            <input type="number" name="gbp_to_usd" id="market_gbp_to_usd" step="0.00001" 
                                    value="<?= $data['market_rates']['GBP_to_USD'] ?>" required>
                         </div>
                         <div class="rate-input-group">
-                            <label>1 EUR = ? GBP</label>
-                            <input type="number" name="eur_to_gbp" step="0.00001" 
-                                   value="<?= $data['market_rates']['EUR_to_GBP'] ?>" required>
+                            <label>1 GBP = ? EUR</label>
+                            <input type="number" name="gbp_to_eur" id="market_gbp_to_eur" step="0.00001" 
+                                   value="<?= $data['market_rates']['GBP_to_EUR'] ?>" required>
                         </div>
                     </div>
                 </div>
@@ -358,28 +361,23 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
                 <div class="rate-section">
                     <h4>💰 Your Selling Rates (What you can sell for)</h4>
                     <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">
-                        <strong>Set only USD rate - EUR and GBP will be auto-calculated!</strong><br>
-                        Example: If 1 USD = 4000 MWK and market rate is 1 EUR = 1.148 USD, then 1 EUR = 4592 MWK
+                        <strong>All rates can be set manually!</strong> Initial values are auto-populated, but you have full control to adjust each rate individually.
                     </p>
                     <div class="rate-grid">
                         <div class="rate-input-group">
-                            <label>1 USD = ? MWK (your rate)</label>
-                            <input type="number" name="admin_usd" step="0.01" 
+                            <label>1 GBP = ? MWK</label>
+                            <input type="number" name="admin_gbp" id="admin_gbp" step="0.01" 
+                                   value="<?= $data['admin_selling_rates']['GBP'] ?>" required>
+                        </div>
+                        <div class="rate-input-group">
+                            <label>1 USD = ? MWK</label>
+                            <input type="number" name="admin_usd" id="admin_usd" step="0.01" 
                                    value="<?= $data['admin_selling_rates']['USD'] ?>" required>
                         </div>
                         <div class="rate-input-group">
-                            <label>1 EUR = ? MWK (auto-calculated)</label>
-                            <input type="number" step="0.01" 
-                                   value="<?= $data['admin_selling_rates']['EUR'] ?>" readonly 
-                                   style="background: #f0f0f0; cursor: not-allowed;">
-                            <small style="color: #666; font-size: 0.75rem;">Auto: USD rate × EUR/USD market rate</small>
-                        </div>
-                        <div class="rate-input-group">
-                            <label>1 GBP = ? MWK (auto-calculated)</label>
-                            <input type="number" step="0.01" 
-                                   value="<?= $data['admin_selling_rates']['GBP'] ?>" readonly 
-                                   style="background: #f0f0f0; cursor: not-allowed;">
-                            <small style="color: #666; font-size: 0.75rem;">Auto: USD rate × GBP/USD market rate</small>
+                            <label>1 EUR = ? MWK</label>
+                            <input type="number" name="admin_eur" id="admin_eur" step="0.01" 
+                                   value="<?= $data['admin_selling_rates']['EUR'] ?>" required>
                         </div>
                     </div>
                 </div>
@@ -501,15 +499,23 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
     </div>
     
     <script>
-    // Auto-calculation for customer rates
+    // Auto-calculation for customer rates and selling rates
     <?php if (isset($_SESSION['admin'])): ?>
     document.addEventListener('DOMContentLoaded', function() {
         const customerGBP = document.getElementById('customer_gbp');
         const customerUSD = document.getElementById('customer_usd');
         const customerEUR = document.getElementById('customer_eur');
         
-        // Get market rates from PHP
-        const marketRates = {
+        const adminGBP = document.getElementById('admin_gbp');
+        const adminUSD = document.getElementById('admin_usd');
+        const adminEUR = document.getElementById('admin_eur');
+        
+        const marketEurToUsd = document.getElementById('market_eur_to_usd');
+        const marketGbpToUsd = document.getElementById('market_gbp_to_usd');
+        const marketGbpToEur = document.getElementById('market_gbp_to_eur');
+        
+        // Get market rates from PHP (initial values)
+        let marketRates = {
             EUR_to_USD: <?= $data['market_rates']['EUR_to_USD'] ?>,
             EUR_to_GBP: <?= $data['market_rates']['EUR_to_GBP'] ?>,
             GBP_to_USD: <?= $data['market_rates']['GBP_to_USD'] ?>,
@@ -517,6 +523,60 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
             USD_to_EUR: <?= $data['market_rates']['USD_to_EUR'] ?>,
             USD_to_GBP: <?= $data['market_rates']['USD_to_GBP'] ?>
         };
+        
+        // Update market rates object when inputs change
+        function updateMarketRates() {
+            const eurToUsd = parseFloat(marketEurToUsd.value);
+            const gbpToUsd = parseFloat(marketGbpToUsd.value);
+            const gbpToEur = parseFloat(marketGbpToEur.value);
+            
+            if (eurToUsd > 0 && gbpToUsd > 0 && gbpToEur > 0) {
+                marketRates.EUR_to_USD = eurToUsd;
+                marketRates.GBP_to_USD = gbpToUsd;
+                marketRates.GBP_to_EUR = gbpToEur;
+                marketRates.USD_to_EUR = 1 / eurToUsd;
+                marketRates.USD_to_GBP = 1 / gbpToUsd;
+                marketRates.EUR_to_GBP = 1 / gbpToEur;
+            }
+        }
+        
+        // Auto-populate admin selling rates based on USD rate (initial population)
+        function autoPopulateAdminRates() {
+            const usdRate = parseFloat(adminUSD.value);
+            if (usdRate > 0) {
+                adminEUR.value = (usdRate * marketRates.EUR_to_USD).toFixed(2);
+                adminGBP.value = (usdRate * marketRates.GBP_to_USD).toFixed(2);
+            }
+        }
+        
+        // Auto-populate customer rates when market rates change
+        function autoPopulateCustomerRates() {
+            // Get a reference rate (we'll use USD as base)
+            const usdRate = parseFloat(customerUSD.value);
+            if (usdRate > 0) {
+                customerEUR.value = (usdRate * marketRates.EUR_to_USD).toFixed(2);
+                customerGBP.value = (usdRate * marketRates.GBP_to_USD).toFixed(2);
+            }
+        }
+        
+        // When market rates change, update derived rates and auto-populate
+        marketEurToUsd.addEventListener('input', function() {
+            updateMarketRates();
+            autoPopulateCustomerRates();
+            autoPopulateAdminRates();
+        });
+        
+        marketGbpToUsd.addEventListener('input', function() {
+            updateMarketRates();
+            autoPopulateCustomerRates();
+            autoPopulateAdminRates();
+        });
+        
+        marketGbpToEur.addEventListener('input', function() {
+            updateMarketRates();
+            autoPopulateCustomerRates();
+            autoPopulateAdminRates();
+        });
         
         // Flag to prevent circular updates
         let isAutoCalculating = false;
@@ -528,12 +588,7 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
             const eurRate = parseFloat(this.value);
             if (eurRate > 0) {
                 isAutoCalculating = true;
-                // If 1 EUR = 4200 MWK and EUR_to_USD = 1.1738 (meaning 1 EUR = 1.1738 USD)
-                // then 1.1738 USD = 4200 MWK, so 1 USD = 4200 / 1.1738 MWK
                 customerUSD.value = (eurRate / marketRates.EUR_to_USD).toFixed(2);
-                
-                // If 1 EUR = 4200 MWK and EUR_to_GBP = 0.88 (meaning 1 EUR = 0.88 GBP)
-                // then 0.88 GBP = 4200 MWK, so 1 GBP = 4200 / 0.88 MWK
                 customerGBP.value = (eurRate / marketRates.EUR_to_GBP).toFixed(2);
                 isAutoCalculating = false;
             }
@@ -546,12 +601,7 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
             const usdRate = parseFloat(this.value);
             if (usdRate > 0) {
                 isAutoCalculating = true;
-                // If 1 USD = 4000 MWK and EUR_to_USD = 1.1738 (meaning 1 EUR = 1.1738 USD)
-                // then 1 EUR = 1.1738 × (4000/1) = 1.1738 × 4000 MWK
                 customerEUR.value = (usdRate * marketRates.EUR_to_USD).toFixed(2);
-                
-                // If 1 USD = 4000 MWK and GBP_to_USD = 1.28 (meaning 1 GBP = 1.28 USD)
-                // then 1 GBP = 1.28 × (4000/1) = 1.28 × 4000 MWK
                 customerGBP.value = (usdRate * marketRates.GBP_to_USD).toFixed(2);
                 isAutoCalculating = false;
             }
@@ -564,15 +614,15 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
             const gbpRate = parseFloat(this.value);
             if (gbpRate > 0) {
                 isAutoCalculating = true;
-                // If 1 GBP = 5200 MWK and EUR_to_GBP = 0.88 (meaning 1 EUR = 0.88 GBP)
-                // then 1 EUR = 0.88 × 5200 MWK
-                customerEUR.value = (gbpRate * marketRates.EUR_to_GBP).toFixed(2);
-                
-                // If 1 GBP = 5200 MWK and USD_to_GBP = 0.781 (meaning 1 USD = 0.781 GBP)
-                // then 1 USD = 0.781 × 5200 MWK
-                customerUSD.value = (gbpRate * marketRates.USD_to_GBP).toFixed(2);
+                customerEUR.value = (gbpRate * marketRates.GBP_to_EUR).toFixed(2);
+                customerUSD.value = (gbpRate * marketRates.GBP_to_USD).toFixed(2);
                 isAutoCalculating = false;
             }
+        });
+        
+        // Auto-populate admin selling rates when USD rate changes
+        adminUSD.addEventListener('input', function() {
+            autoPopulateAdminRates();
         });
     });
     

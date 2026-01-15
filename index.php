@@ -11,10 +11,10 @@ if (!file_exists($dataFile)) {
         ],
         'market_rates' => [
             // Real market rates between foreign currencies
-            'EUR_to_GBP' => 1.14,      // 1 EUR = 1.14 GBP
+            'EUR_to_GBP' => 0.877,     // 1 EUR = 0.877 GBP (inverse of GBP_to_EUR)
             'EUR_to_USD' => 1.1738,    // 1 EUR = 1.1738 USD
             'GBP_to_USD' => 1.28,      // 1 GBP = 1.28 USD
-            'GBP_to_EUR' => 0.877,     // 1 GBP = 0.877 EUR
+            'GBP_to_EUR' => 1.14,      // 1 GBP = 1.14 EUR (PRIMARY - was EUR_to_GBP)
             'USD_to_EUR' => 0.852,     // 1 USD = 0.852 EUR
             'USD_to_GBP' => 0.781      // 1 USD = 0.781 GBP
         ],
@@ -202,14 +202,14 @@ if (isset($_POST['calculate']) || isset($_POST['save'])) {
                 <div class="form-group">
                     <label for="currency">Currency</label>
                     <select id="currency" name="currency" required>
+                        <option value="EUR" <?= (($_POST['currency'] ?? 'EUR') === 'EUR') ? 'selected' : '' ?>>
+                            Euro (€)
+                        </option>
                         <option value="GBP" <?= (($_POST['currency'] ?? '') === 'GBP') ? 'selected' : '' ?>>
                             British Pound (£)
                         </option>
                         <option value="USD" <?= (($_POST['currency'] ?? '') === 'USD') ? 'selected' : '' ?>>
                             US Dollar ($)
-                        </option>
-                        <option value="EUR" <?= (($_POST['currency'] ?? '') === 'EUR') ? 'selected' : '' ?>>
-                            Euro (€)
                         </option>
                     </select>
                 </div>
