@@ -50,12 +50,19 @@ A comprehensive foreign exchange calculator for converting currencies to Malawi 
 
 2. Ensure PHP is installed (PHP 7.0 or higher recommended)
 
-3. Start a local PHP server:
+3. Copy the example data file (if needed):
+   ```bash
+   cp data.json.example data.json
+   ```
+   
+   Note: `data.json` will be created automatically on first run if it doesn't exist.
+
+4. Start a local PHP server:
    ```bash
    php -S localhost:8000
    ```
 
-4. Access the application:
+5. Access the application:
    - Customer Calculator: http://localhost:8000/index.php
    - Admin Dashboard: http://localhost:8000/admin.php
 

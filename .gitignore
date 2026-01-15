@@ -1,0 +1,8 @@
+# Data files
+data.json
+
+# PHP server logs
+*.log
+
+# Temporary files
+/tmp/

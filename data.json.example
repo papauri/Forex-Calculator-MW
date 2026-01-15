@@ -1,0 +1,52 @@
+{
+  "rates": {
+    "GBP": 5200,
+    "USD": 4000,
+    "EUR": 4200
+  },
+  "real_rates": {
+    "GBP": {
+      "rate": 1.26,
+      "base": "USD"
+    },
+    "USD": {
+      "rate": 1,
+      "base": "USD"
+    },
+    "EUR": {
+      "rate": 1.17461,
+      "base": "USD"
+    }
+  },
+  "usd_to_mwk": 4000,
+  "transactions": [],
+  "total_profit": 0,
+  "customer_rates": {
+    "GBP": 4800,
+    "USD": 3650,
+    "EUR": 4200
+  },
+  "market_rates": {
+    "EUR_to_GBP": 0.8786516853932584,
+    "EUR_to_USD": 1.173,
+    "GBP_to_USD": 1.335,
+    "GBP_to_EUR": 1.1381074168797953,
+    "USD_to_EUR": 0.8525149190110827,
+    "USD_to_GBP": 0.7490636704119851
+  },
+  "admin_selling_rates": {
+    "GBP": 5340,
+    "USD": 4000,
+    "EUR": 4692
+  },
+  "bank_rates": {
+    "GBP": 4700,
+    "USD": 3600,
+    "EUR": 4100
+  },
+  "talkremit_rates": {
+    "GBP": 4750,
+    "USD": 3620,
+    "EUR": 4150
+  }
+}
