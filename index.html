@@ -1,0 +1,142 @@
+<?php
+// Load data
+$dataFile = 'data.json';
+if (!file_exists($dataFile)) {
+    $defaultData = [
+        'rates' => [
+            'GBP' => 5200,  // 1 GBP = 5200 MWK
+            'USD' => 4000,  // 1 USD = 4000 MWK
+            'EUR' => 4200   // 1 EUR = 4200 MWK
+        ],
+        'real_rates' => [
+            'GBP' => ['rate' => 1.26, 'base' => 'USD'],  // 1 GBP = 1.26 USD
+            'USD' => ['rate' => 1, 'base' => 'USD'],     // 1 USD = 1 USD
+            'EUR' => ['rate' => 1.17461, 'base' => 'USD'] // 1 EUR = 1.17461 USD
+        ],
+        'usd_to_mwk' => 4000,  // Real rate: 1 USD = 4000 MWK
+        'transactions' => [],
+        'total_profit' => 0
+    ];
+    file_put_contents($dataFile, json_encode($defaultData, JSON_PRETTY_PRINT));
+}
+
+$data = json_decode(file_get_contents($dataFile), true);
+
+// Handle conversion
+$result = null;
+if ($_POST['amount'] ?? false) {
+    $amount = floatval($_POST['amount']);
+    $currency = $_POST['currency'];
+    
+    if ($amount > 0) {
+        $rate = $data['rates'][$currency];
+        $mwk_amount = $amount * $rate;
+        
+        // Calculate real value and profit
+        $real_usd_value = $amount * $data['real_rates'][$currency]['rate'];
+        $real_mwk_value = $real_usd_value * $data['usd_to_mwk'];
+        $profit = $real_mwk_value - $mwk_amount;
+        
+        // Log transaction
+        $transaction = [
+            'date' => date('Y-m-d H:i:s'),
+            'amount' => $amount,
+            'currency' => $currency,
+            'rate_charged' => $rate,
+            'mwk_given' => $mwk_amount,
+            'real_mwk_value' => $real_mwk_value,
+            'profit' => $profit
+        ];
+        
+        $data['transactions'][] = $transaction;
+        $data['total_profit'] += $profit;
+        
+        file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT));
+        
+        $result = [
+            'amount' => $amount,
+            'currency' => $currency,
+            'mwk_amount' => number_format($mwk_amount, 2),
+            'rate' => $rate
+        ];
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forex Calculator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💱 Forex Calculator</h1>
+            <p>Convert your currency to Malawi Kwacha (MWK)</p>
+        </header>
+
+        <div class="calculator-card">
+            <form method="POST" class="calculator-form">
+                <div class="form-group">
+                    <label for="amount">Amount</label>
+                    <input type="number" 
+                           id="amount" 
+                           name="amount" 
+                           step="0.01" 
+                           min="0" 
+                           placeholder="Enter amount" 
+                           value="<?= $_POST['amount'] ?? '' ?>"
+                           required>
+                </div>
+
+                <div class="form-group">
+                    <label for="currency">From Currency</label>
+                    <select id="currency" name="currency" required>
+                        <option value="GBP" <?= ($_POST['currency'] ?? '') === 'GBP' ? 'selected' : '' ?>>
+                            🇬🇧 British Pound (£)
+                        </option>
+                        <option value="USD" <?= ($_POST['currency'] ?? '') === 'USD' ? 'selected' : '' ?>>
+                            🇺🇸 US Dollar ($)
+                        </option>
+                        <option value="EUR" <?= ($_POST['currency'] ?? '') === 'EUR' ? 'selected' : '' ?>>
+                            🇪🇺 Euro (€)
+                        </option>
+                    </select>
+                </div>
+
+                <button type="submit" class="convert-btn">Convert to MWK</button>
+            </form>
+
+            <?php if ($result): ?>
+            <div class="result-card">
+                <h3>💰 Conversion Result</h3>
+                <div class="result-details">
+                    <p><strong><?= $result['currency'] ?> <?= number_format($result['amount'], 2) ?></strong></p>
+                    <div class="arrow">↓</div>
+                    <p class="mwk-amount"><strong>MWK <?= $result['mwk_amount'] ?></strong></p>
+                    <p class="rate">Exchange Rate: 1 <?= $result['currency'] ?> = <?= number_format($result['rate']) ?> MWK</p>
+                </div>
+            </div>
+            <?php endif; ?>
+        </div>
+
+        <div class="rates-display">
+            <h3>📊 Current Exchange Rates</h3>
+            <div class="rates-grid">
+                <?php foreach ($data['rates'] as $curr => $rate): ?>
+                <div class="rate-item">
+                    <span class="currency-code"><?= $curr ?></span>
+                    <span class="rate-value">1 = <?= number_format($rate) ?> MWK</span>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <footer>
+            <a href="admin.php" class="admin-link">Admin Dashboard</a>
+        </footer>
+    </div>
+</body>
+</html>
