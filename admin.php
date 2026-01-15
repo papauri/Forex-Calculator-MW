@@ -96,6 +96,9 @@ if (isset($_SESSION['admin']) && isset($_POST['update_rates'])) {
     if ($eur_to_usd <= 0 || $gbp_to_usd <= 0 || $usd_selling_rate <= 0 || 
         $customer_usd <= 0 || $customer_eur <= 0 || $customer_gbp <= 0) {
         $error = 'All rates must be greater than zero!';
+    } elseif ($bank_usd < 0 || $bank_eur < 0 || $bank_gbp < 0 || 
+              $talkremit_usd < 0 || $talkremit_eur < 0 || $talkremit_gbp < 0) {
+        $error = 'Bank and TalkRemit rates cannot be negative!';
     } else {
         // Auto-calculate other selling rates based on USD rate
         $data['admin_selling_rates']['USD'] = $usd_selling_rate;

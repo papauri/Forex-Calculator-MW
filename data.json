@@ -51,9 +51,75 @@
                     "target_currency": "EUR"
                 }
             }
+        },
+        {
+            "date": "2026-01-15 14:38:56",
+            "name": "John Doe - Payment",
+            "amount": 100,
+            "currency": "GBP",
+            "customer_rate": 4800,
+            "mwk_given_to_customer": 480000,
+            "best_strategy": "convert_to_USD",
+            "best_profit": 54000,
+            "all_options": {
+                "direct_GBP": {
+                    "description": "Sell 100 GBP directly",
+                    "amount_received": 534000,
+                    "profit": 54000
+                },
+                "convert_to_USD": {
+                    "description": "Convert 100 GBP to 133.5 USD, then sell",
+                    "amount_received": 534000,
+                    "profit": 54000,
+                    "conversion_rate": 1.335,
+                    "converted_amount": 133.5,
+                    "target_currency": "USD"
+                },
+                "convert_to_EUR": {
+                    "description": "Convert 100 GBP to 113.81074168798 EUR, then sell",
+                    "amount_received": 534000,
+                    "profit": 54000,
+                    "conversion_rate": 1.1381074168797953,
+                    "converted_amount": 113.81074168797953,
+                    "target_currency": "EUR"
+                }
+            }
+        },
+        {
+            "date": "2026-01-15 14:40:30",
+            "name": "Jane Smith - Service Fee",
+            "amount": 200,
+            "currency": "GBP",
+            "customer_rate": 4800,
+            "mwk_given_to_customer": 960000,
+            "best_strategy": "convert_to_USD",
+            "best_profit": 108000,
+            "all_options": {
+                "direct_GBP": {
+                    "description": "Sell 200 GBP directly",
+                    "amount_received": 1068000,
+                    "profit": 108000
+                },
+                "convert_to_USD": {
+                    "description": "Convert 200 GBP to 267 USD, then sell",
+                    "amount_received": 1068000,
+                    "profit": 108000,
+                    "conversion_rate": 1.335,
+                    "converted_amount": 267,
+                    "target_currency": "USD"
+                },
+                "convert_to_EUR": {
+                    "description": "Convert 200 GBP to 227.62148337596 EUR, then sell",
+                    "amount_received": 1068000,
+                    "profit": 108000,
+                    "conversion_rate": 1.1381074168797953,
+                    "converted_amount": 227.62148337595906,
+                    "target_currency": "EUR"
+                }
+            }
         }
     ],
-    "total_profit": 54000,
+    "total_profit": 216000,
     "customer_rates": {
         "GBP": 4800,
         "USD": 3650,
@@ -71,5 +137,15 @@
         "GBP": 5340,
         "USD": 4000,
         "EUR": 4692
+    },
+    "bank_rates": {
+        "GBP": 4700,
+        "USD": 3600,
+        "EUR": 4100
+    },
+    "talkremit_rates": {
+        "GBP": 4750,
+        "USD": 3620,
+        "EUR": 4150
     }
 }

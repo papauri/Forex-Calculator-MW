@@ -235,8 +235,8 @@ if (isset($_POST['amount']) && $_POST['amount'] !== '') {
                 if ($result['direction'] === 'foreign_to_mwk'):
                     $currency = $result['currency'];
                     $amount = $result['amount'];
-                    $bank_rate = $data['bank_rates'][$currency] ?? 0;
-                    $talkremit_rate = $data['talkremit_rates'][$currency] ?? 0;
+                    $bank_rate = max(0, floatval($data['bank_rates'][$currency] ?? 0));
+                    $talkremit_rate = max(0, floatval($data['talkremit_rates'][$currency] ?? 0));
                     $show_comparison = ($bank_rate > 0 || $talkremit_rate > 0);
                     
                     if ($show_comparison):
