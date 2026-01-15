@@ -76,6 +76,7 @@ if (isset($_SESSION['admin']) && isset($_POST['update_rates'])) {
     // Market conversion rates (how currencies convert to each other)
     $eur_to_usd = floatval($_POST['eur_to_usd']); // e.g., 1.148
     $gbp_to_usd = floatval($_POST['gbp_to_usd']); // e.g., 1.322
+    $eur_to_gbp = floatval($_POST['eur_to_gbp']); // e.g., 0.877
     
     // Customer rates
     $customer_usd = floatval($_POST['customer_usd']);
@@ -93,7 +94,7 @@ if (isset($_SESSION['admin']) && isset($_POST['update_rates'])) {
     $talkremit_gbp = floatval($_POST['talkremit_gbp'] ?? 0);
     
     // Validate that all rates are positive to prevent division by zero and invalid configurations
-    if ($eur_to_usd <= 0 || $gbp_to_usd <= 0 || $usd_selling_rate <= 0 || 
+    if ($eur_to_usd <= 0 || $gbp_to_usd <= 0 || $eur_to_gbp <= 0 || $usd_selling_rate <= 0 || 
         $customer_usd <= 0 || $customer_eur <= 0 || $customer_gbp <= 0) {
         $error = 'All rates must be greater than zero!';
     } elseif ($bank_usd < 0 || $bank_eur < 0 || $bank_gbp < 0 || 
@@ -123,10 +124,10 @@ if (isset($_SESSION['admin']) && isset($_POST['update_rates'])) {
         // Store market conversion rates for calculations
         $data['market_rates']['EUR_to_USD'] = $eur_to_usd;
         $data['market_rates']['GBP_to_USD'] = $gbp_to_usd;
+        $data['market_rates']['EUR_to_GBP'] = $eur_to_gbp;
         $data['market_rates']['USD_to_EUR'] = 1 / $eur_to_usd;
         $data['market_rates']['USD_to_GBP'] = 1 / $gbp_to_usd;
-        $data['market_rates']['EUR_to_GBP'] = $eur_to_usd / $gbp_to_usd;
-        $data['market_rates']['GBP_to_EUR'] = $gbp_to_usd / $eur_to_usd;
+        $data['market_rates']['GBP_to_EUR'] = 1 / $eur_to_gbp;
         
         file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT));
         $success = 'All rates updated successfully! EUR and GBP selling rates auto-calculated based on USD rate.';
@@ -333,7 +334,7 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
                 <!-- Market Conversion Rates -->
                 <div class="rate-section">
                     <h4>🌍 Market Conversion Rates</h4>
-                    <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">Set the current market rates for automatic selling rate calculation</p>
+                    <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">Set the current market rates for automatic selling rate calculation and inverse conversions</p>
                     <div class="rate-grid">
                         <div class="rate-input-group">
                             <label>1 EUR = ? USD</label>
@@ -344,6 +345,11 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
                             <label>1 GBP = ? USD</label>
                             <input type="number" name="gbp_to_usd" step="0.00001" 
                                    value="<?= $data['market_rates']['GBP_to_USD'] ?>" required>
+                        </div>
+                        <div class="rate-input-group">
+                            <label>1 EUR = ? GBP</label>
+                            <input type="number" name="eur_to_gbp" step="0.00001" 
+                                   value="<?= $data['market_rates']['EUR_to_GBP'] ?>" required>
                         </div>
                     </div>
                 </div>
@@ -430,11 +436,29 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
 
         <!-- Profit Preview -->
         <div class="admin-section">
-            <h3>💡 Profit Preview (per 1000 units)</h3>
-            <div class="profit-preview-grid">
+            <h3>💡 Profit Preview</h3>
+            <p style="font-size: 0.9rem; color: #666; margin-bottom: 16px;">Calculate profit for any amount. Enter custom amounts or use default 1000 units.</p>
+            
+            <div class="profit-preview-controls">
+                <div class="profit-input-group">
+                    <label for="profit_gbp_amount">GBP Amount:</label>
+                    <input type="number" id="profit_gbp_amount" value="1000" min="0" step="0.01">
+                </div>
+                <div class="profit-input-group">
+                    <label for="profit_usd_amount">USD Amount:</label>
+                    <input type="number" id="profit_usd_amount" value="1000" min="0" step="0.01">
+                </div>
+                <div class="profit-input-group">
+                    <label for="profit_eur_amount">EUR Amount:</label>
+                    <input type="number" id="profit_eur_amount" value="1000" min="0" step="0.01">
+                </div>
+                <button onclick="updateProfitPreview()" class="calculate-btn" style="margin-top: 20px;">Calculate Profit</button>
+            </div>
+            
+            <div class="profit-preview-grid" id="profit-preview-results">
                 <?php foreach (['GBP', 'USD', 'EUR'] as $currency): ?>
-                <div class="profit-preview-card">
-                    <h4>1000 <?= $currency ?></h4>
+                <div class="profit-preview-card" id="preview-<?= strtolower($currency) ?>">
+                    <h4><span class="preview-amount">1000</span> <?= $currency ?></h4>
                     <div class="preview-details">
                         <?php
                         $amount = 1000;
@@ -504,13 +528,13 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
             const eurRate = parseFloat(this.value);
             if (eurRate > 0) {
                 isAutoCalculating = true;
-                // If 1 EUR = 4200 MWK and market shows 1 USD = 0.852 EUR
-                // then 1 USD = 4200 * 0.852 MWK
-                customerUSD.value = (eurRate * marketRates.USD_to_EUR).toFixed(2);
+                // If 1 EUR = 4200 MWK and EUR_to_USD = 1.1738 (meaning 1 EUR = 1.1738 USD)
+                // then 1.1738 USD = 4200 MWK, so 1 USD = 4200 / 1.1738 MWK
+                customerUSD.value = (eurRate / marketRates.EUR_to_USD).toFixed(2);
                 
-                // If 1 EUR = 4200 MWK and EUR_to_GBP = 1.14 (meaning to convert EUR to equivalent GBP value)
-                // then 1 GBP = 4200 * 1.14 MWK
-                customerGBP.value = (eurRate * marketRates.EUR_to_GBP).toFixed(2);
+                // If 1 EUR = 4200 MWK and EUR_to_GBP = 0.88 (meaning 1 EUR = 0.88 GBP)
+                // then 0.88 GBP = 4200 MWK, so 1 GBP = 4200 / 0.88 MWK
+                customerGBP.value = (eurRate / marketRates.EUR_to_GBP).toFixed(2);
                 isAutoCalculating = false;
             }
         });
@@ -522,12 +546,12 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
             const usdRate = parseFloat(this.value);
             if (usdRate > 0) {
                 isAutoCalculating = true;
-                // If 1 USD = 4000 MWK and USD_to_EUR shows how to convert USD value to EUR value
-                // then 1 EUR = 4000 * EUR_to_USD (inverse relationship)
+                // If 1 USD = 4000 MWK and EUR_to_USD = 1.1738 (meaning 1 EUR = 1.1738 USD)
+                // then 1 EUR = 1.1738 × (4000/1) = 1.1738 × 4000 MWK
                 customerEUR.value = (usdRate * marketRates.EUR_to_USD).toFixed(2);
                 
-                // If 1 USD = 4000 MWK and USD_to_GBP shows how to convert USD value to GBP value
-                // then 1 GBP = 4000 * GBP_to_USD (inverse relationship)
+                // If 1 USD = 4000 MWK and GBP_to_USD = 1.28 (meaning 1 GBP = 1.28 USD)
+                // then 1 GBP = 1.28 × (4000/1) = 1.28 × 4000 MWK
                 customerGBP.value = (usdRate * marketRates.GBP_to_USD).toFixed(2);
                 isAutoCalculating = false;
             }
@@ -540,17 +564,91 @@ if (isset($_SESSION['admin']) && isset($_POST['delete_transaction'])) {
             const gbpRate = parseFloat(this.value);
             if (gbpRate > 0) {
                 isAutoCalculating = true;
-                // If 1 GBP = 5200 MWK and GBP_to_EUR shows how to convert GBP value to EUR value
-                // then 1 EUR = 5200 * GBP_to_EUR
-                customerEUR.value = (gbpRate * marketRates.GBP_to_EUR).toFixed(2);
+                // If 1 GBP = 5200 MWK and EUR_to_GBP = 0.88 (meaning 1 EUR = 0.88 GBP)
+                // then 1 EUR = 0.88 × 5200 MWK
+                customerEUR.value = (gbpRate * marketRates.EUR_to_GBP).toFixed(2);
                 
-                // If 1 GBP = 5200 MWK and GBP_to_USD shows how to convert GBP value to USD value
-                // then 1 USD = 5200 * GBP_to_USD
-                customerUSD.value = (gbpRate * marketRates.GBP_to_USD).toFixed(2);
+                // If 1 GBP = 5200 MWK and USD_to_GBP = 0.781 (meaning 1 USD = 0.781 GBP)
+                // then 1 USD = 0.781 × 5200 MWK
+                customerUSD.value = (gbpRate * marketRates.USD_to_GBP).toFixed(2);
                 isAutoCalculating = false;
             }
         });
     });
+    
+    // Profit Preview Calculator
+    function updateProfitPreview() {
+        const gbpAmount = parseFloat(document.getElementById('profit_gbp_amount').value) || 0;
+        const usdAmount = parseFloat(document.getElementById('profit_usd_amount').value) || 0;
+        const eurAmount = parseFloat(document.getElementById('profit_eur_amount').value) || 0;
+        
+        const amounts = {
+            'gbp': gbpAmount,
+            'usd': usdAmount,
+            'eur': eurAmount
+        };
+        
+        const customerRates = {
+            'GBP': <?= $data['customer_rates']['GBP'] ?>,
+            'USD': <?= $data['customer_rates']['USD'] ?>,
+            'EUR': <?= $data['customer_rates']['EUR'] ?>
+        };
+        
+        const adminRates = {
+            'GBP': <?= $data['admin_selling_rates']['GBP'] ?>,
+            'USD': <?= $data['admin_selling_rates']['USD'] ?>,
+            'EUR': <?= $data['admin_selling_rates']['EUR'] ?>
+        };
+        
+        const marketRates = {
+            EUR_to_USD: <?= $data['market_rates']['EUR_to_USD'] ?>,
+            EUR_to_GBP: <?= $data['market_rates']['EUR_to_GBP'] ?>,
+            GBP_to_USD: <?= $data['market_rates']['GBP_to_USD'] ?>,
+            GBP_to_EUR: <?= $data['market_rates']['GBP_to_EUR'] ?>,
+            USD_to_EUR: <?= $data['market_rates']['USD_to_EUR'] ?>,
+            USD_to_GBP: <?= $data['market_rates']['USD_to_GBP'] ?>
+        };
+        
+        // Update each currency card
+        ['GBP', 'USD', 'EUR'].forEach(currency => {
+            const currencyKey = currency.toLowerCase();
+            const amount = amounts[currencyKey];
+            const card = document.getElementById('preview-' + currencyKey);
+            
+            if (amount > 0) {
+                // Update the amount display
+                card.querySelector('.preview-amount').textContent = amount.toFixed(2);
+                
+                const customerGets = amount * customerRates[currency];
+                
+                // Calculate direct profit
+                const directProfit = (amount * adminRates[currency]) - customerGets;
+                
+                let html = `<div class='profit-option'>
+                    <span>Direct sale:</span>
+                    <span class='profit-amount'>+${directProfit.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} MWK</span>
+                </div>`;
+                
+                // Calculate conversion profits
+                Object.keys(marketRates).forEach(rateKey => {
+                    const fromCurr = rateKey.substring(0, 3);
+                    const toCurr = rateKey.substring(rateKey.length - 3);
+                    
+                    if (fromCurr === currency) {
+                        const convertedAmount = amount * marketRates[rateKey];
+                        const conversionProfit = (convertedAmount * adminRates[toCurr]) - customerGets;
+                        
+                        html += `<div class='profit-option'>
+                            <span>Via ${toCurr}:</span>
+                            <span class='profit-amount'>+${conversionProfit.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} MWK</span>
+                        </div>`;
+                    }
+                });
+                
+                card.querySelector('.preview-details').innerHTML = html;
+            }
+        });
+    }
     <?php endif; ?>
     </script>
 </body>
